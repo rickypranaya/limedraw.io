@@ -58,12 +58,7 @@ import { generateSlug } from "random-word-slugs";
 
 //socket connection
 const USERID = uuid();
-const socket = io.connect('https://limedraw.herokuapp.com/',{
-    withCredentials: true,
-    extraHeaders: {
-      "my-custom-header": "abcd"
-    }
-  })
+const socket = io.connect('https://limedraw.herokuapp.com/')
 
 // to render chat bubbles
 const RenderBubbles =({item})=>{
