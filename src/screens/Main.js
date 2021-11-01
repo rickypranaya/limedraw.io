@@ -1,10 +1,9 @@
-import React, {useEffect, useState, useRef, useLayoutEffect} from 'react'
+import React, {useEffect, useState, useRef} from 'react'
 
 //components
 import Constant from '../components/Constant';
 
 //picture
-import profile from '../assets/profile.jpeg';
 import limedrawlogo from '../assets/limedrawlogo.png'
 import halloweenparty from '../assets/halloweenparty.png'
 import ghost1 from '../assets/1.jpg'
@@ -50,7 +49,7 @@ import errorsound from '../assets/error.mp3'
 //import packages
 import io from 'socket.io-client'
 import Peer from 'simple-peer'
-import {Howl, Howler} from 'howler';
+import {Howl} from 'howler';
 import { v1 as uuid } from "uuid";
 import { useHistory } from 'react-router';
 import { useLocation} from "react-router-dom";
@@ -83,30 +82,30 @@ const RenderBubbles =({item})=>{
                 <img style={{objectFit:'cover', width:30, height:30,marginRight:10, borderRadius:8}} src={item.profile} alt="Logo" />
             }   
 
-            {item.status == 1 &&
+            {item.status === 1 &&
             <div style={{alignSelf: align, color:'white', borderRadius:8, paddingTop:6, paddingBottom:6, paddingLeft:0, paddingRight:0, textAlign: 'left', fontSize:14}}>
                 <span style={{color:'#50F256'}}> { me ?  'You guess it right!' : item.username + " guess it right!"} </span> 
             </div> 
             }
 
-            {item.status == 2 &&
+            {item.status === 2 &&
             <div style={{alignSelf: align, color:'white', borderRadius:8, paddingTop:6, paddingBottom:6, paddingLeft:0, paddingRight:0, textAlign: 'left', fontSize:14}}>
                 <span style={{color:'orange'}}> { me ?  'Welcome to the party!' : item.username + " has joined the party!"} </span> 
             </div> 
             }
 
-            {item.status == 3 &&
+            {item.status === 3 &&
             <div style={{alignSelf: 'flex-start', color:'white', borderRadius:8, paddingTop:6, paddingBottom:6, paddingLeft:0, paddingRight:0, textAlign: 'left', fontSize:14}}>
                 <span style={{color:'orange'}}> { item.username + " left the party!"} </span> 
             </div> 
             }
 
             <div style={{ display:'flex', flexDirection:'column'}}>
-                {!me && item.status == 0 &&
+                {!me && item.status === 0 &&
                     <div style={{textAlign: 'left',  color:"lightgrey", fontSize:11, marginBottom:3}}>{item.username}</div>
                 }
 
-                {item.status == 0 &&
+                {item.status === 0 &&
                 <div style={{alignSelf: align, maxWidth:'70%', color:'white', backgroundColor: color, borderRadius:8, paddingTop:6, paddingBottom:6, paddingLeft:15, paddingRight:15, textAlign: 'left', fontSize:14}}>
                    <span style={{maxWidth:'70%'}}>{item.answer} </span> 
                 </div> 
@@ -244,7 +243,7 @@ function Main (props) {
 
     const invite = ()=>{
         setInvite(true)
-        navigator.clipboard.writeText("http://localhost:3000/enter/"+roomID)
+        navigator.clipboard.writeText("https://limedrawio.netlify.app/enter/"+roomID)
     }
 
     //me 
@@ -253,13 +252,13 @@ function Main (props) {
 
     useEffect(()=>{
         socket.on("jumpscare", roomId=>{
-            if (roomId == roomID){
+            if (roomId === roomID){
                 jump()
             }
         })
 
         socket.on("next drawer", data=>{
-            if (data.roomID == roomID && data.userSnapshot.length !== 0){
+            if (data.roomID === roomID && data.userSnapshot.length !== 0){
                 changeSound.play()
                 var counter = data.counter
                 var dividend = data.userSnapshot.length
@@ -281,7 +280,7 @@ function Main (props) {
         })
 
         socket.on("add point", data=>{
-            if (data.roomID == roomID){
+            if (data.roomID === roomID){
 
                 dingSound.play()
                 if (data.user[0].id === socket.id){
@@ -294,20 +293,20 @@ function Main (props) {
         })
 
         socket.on("game over", data=>{
-            if (data.roomID == roomID){
+            if (data.roomID === roomID){
                 onGameOver(data.user[0].user)
             }
         })
 
         socket.on("playagain", data=>{
-            if (data.roomID == roomID){
+            if (data.roomID === roomID){
                 setUsers(data.snapshot)
                 setDrawer(data.snapshot[0])
             }
         })
 
         socket.on("start", data=>{
-            if (data.roomID == roomID){
+            if (data.roomID === roomID){
                 setStart(true)
                 setCanvasOn(true)
                 setDrawer(data.user)
@@ -315,7 +314,7 @@ function Main (props) {
         })
 
         socket.on("draw", data=>{
-            if (data.roomID == roomID){
+            if (data.roomID === roomID){
                 setDrawerCounter(drawerCounter=>drawerCounter+1)
                 onCountDown()
                 setDrawWord(data.word)
@@ -323,7 +322,7 @@ function Main (props) {
         })
 
         socket.on("skip", roomid=>{
-            if (roomid == roomID){
+            if (roomid === roomID){
                 setDrawerCounter(drawerCounter=>drawerCounter+1)
             }
         })
@@ -1406,7 +1405,7 @@ function Main (props) {
                         </div>
                         <img style={{width:'40%', height:'auto'}} src ={nenek} alt={"invite picture"}/>
                         <span style={{fontWeight:'bold', fontSize:18, color: Constant.PRIMARY_COLOR, marginBottom:16}}>Link Copied!</span>  
-                        <span style={{border:'1px solid lightgrey', color:'grey', borderRadius:10, fontSize:14, padding:10}}>{"http://localhost:3000/enter/"+roomID}</span>
+                        <span style={{border:'1px solid lightgrey', color:'grey', borderRadius:10, fontSize:14, padding:10}}>{"https://limedrawio.netlify.app/enter/"+roomID}</span>
                         <span style={{color: 'black',fontWeight:'bold',fontSize:18, marginTop:20, marginBottom:20}}>Send to your friends and start scaring them!</span>
                     </div> 
                 </div>

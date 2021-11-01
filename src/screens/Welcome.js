@@ -24,7 +24,7 @@ import {FaArrowRight, FaArrowLeft} from 'react-icons/fa'
 import {RiDoorFill} from 'react-icons/ri'
 import {FaPlay} from 'react-icons/fa'
 import {FcGoogle} from 'react-icons/fc'
-import {Howl, Howler} from 'howler';
+import {Howl} from 'howler';
 
 //sound
 import bgsound from '../assets/spookybg.mp3'
@@ -189,7 +189,7 @@ const Welcome = (props) => {
                         <Slider {...settings}>
                             {images.map((img, idx)=>{
                                 return (
-                                    <div className={idx === imageIndex? "slide activeSlide" : "slide"}>
+                                    <div key={idx} className={idx === imageIndex? "slide activeSlide" : "slide"}>
                                         <img style={{borderRadius:20}} src={img} alt={img} />
                                     </div>
                                 )
