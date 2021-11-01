@@ -243,7 +243,7 @@ function Main (props) {
 
     const invite = ()=>{
         setInvite(true)
-        navigator.clipboard.writeText("https://limedrawio.netlify.app/enter/"+roomID)
+        navigator.clipboard.writeText("https://limedrawio.herokuapp.com/enter/"+roomID)
     }
 
     //me 
@@ -1405,7 +1405,7 @@ function Main (props) {
                         </div>
                         <img style={{width:'40%', height:'auto'}} src ={nenek} alt={"invite picture"}/>
                         <span style={{fontWeight:'bold', fontSize:18, color: Constant.PRIMARY_COLOR, marginBottom:16}}>Link Copied!</span>  
-                        <span style={{border:'1px solid lightgrey', color:'grey', borderRadius:10, fontSize:14, padding:10}}>{"https://limedrawio.netlify.app/enter/"+roomID}</span>
+                        <span style={{border:'1px solid lightgrey', color:'grey', borderRadius:10, fontSize:14, padding:10}}>{"https://limedrawio.herokuapp.com/enter/"+roomID}</span>
                         <span style={{color: 'black',fontWeight:'bold',fontSize:18, marginTop:20, marginBottom:20}}>Send to your friends and start scaring them!</span>
                     </div> 
                 </div>
