@@ -7,6 +7,9 @@ import Constant from '../components/Constant';
 import limedrawlogo from '../assets/limedrawlogo.png'
 import halloweenparty from '../assets/halloweenparty.png'
 import ghost1 from '../assets/1.jpg'
+import rotate from '../assets/rotate.png'
+import jack from '../assets/jack.png'
+import boo from '../assets/boo.png'
 
 //character
 import bear from '../assets/bear.png'
@@ -34,6 +37,8 @@ import {IoMdLogOut} from 'react-icons/io';
 import {SiGhostery} from 'react-icons/si'
 import {AiOutlineCloseCircle} from 'react-icons/ai'
 import {FaPlay } from 'react-icons/fa'
+import {IoMdVolumeHigh} from 'react-icons/io'
+import {IoMdVolumeOff} from 'react-icons/io'
 
 //sound
 import sound1 from '../assets/sound1.mp3'
@@ -58,7 +63,8 @@ import { generateSlug } from "random-word-slugs";
 
 //socket connection
 const USERID = uuid();
-const socket = io.connect('https://limedraw.herokuapp.com/')
+// const socket = io.connect('https://limedraw.herokuapp.com/')
+const socket = io.connect('http://localhost:5000/')
 
 // to render chat bubbles
 const RenderBubbles =({item})=>{
@@ -77,7 +83,7 @@ const RenderBubbles =({item})=>{
     }
 
     return(   
-        <div style={{alignSelf: align, display:'flex', flexDirection:'row', alignItems:'flex-end', marginTop:6, marginBottom:6, paddingLeft:16, paddingRight:16}}>
+        <div style={{alignSelf: align, display:'flex', flexDirection:'row', alignItems:'flex-end', marginTop:6, marginBottom:6, paddingLeft:16, paddingRight:11}}>
             {!me &&
                 <img style={{objectFit:'cover', width:30, height:30,marginRight:10, borderRadius:8}} src={item.profile} alt="Logo" />
             }   
@@ -155,6 +161,7 @@ const Video = (props) => {
     const ref = useRef();
     
     useEffect(() => {
+        
         props.peer.peer.on("stream", stream => {
             ref.current.srcObject = stream;
         })
@@ -183,6 +190,10 @@ return (
         <video id="videoElement" style={{backgroundColor:'#444', border:props.drawer === props.peer.peerID ?'4px solid #CD0094': '0px', borderRadius:10,height: props.height, width: props.width , justifyContent:'center', objectFit:"cover"}}  ref={ref} autoPlay playsInline />
         <div style={{color:'white', position:'absolute',  bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3, fontSize:14}}>
             {props.peer.username}
+        </div>
+
+        <div style={{ display: props.scare? 'flex': 'none', color:'white', position:'absolute', top:0, right:0, }}>
+            <img style={{ width:'auto', height:60,}} src={boo} alt="boo!" />
         </div>
     </div>
 );
@@ -257,17 +268,25 @@ function Main (props) {
             }
         })
 
+        socket.on("all answer", roomId=>{
+            if (roomId === roomID){
+                onAllAnswer()
+            }
+        })
+
         socket.on("next drawer", data=>{
             if (data.roomID === roomID && data.userSnapshot.length !== 0){
                 changeSound.play()
-                var counter = data.counter
+                var counter = drawerCounter.current
                 var dividend = data.userSnapshot.length
                 var index = counter % dividend
                 // console.log("---------------")
                 // console.log(counter)
                 // console.log(data.userSnapshot)
                 // console.log("index= "+ index)
-                setDrawer(drawer=> data.userSnapshot[index])
+
+                // setDrawer(drawer=> data.userSnapshot[index])
+                drawerRef.current = data.userSnapshot[index]
         
 
                 if (data.userSnapshot[index].id === socket.id){
@@ -292,6 +311,19 @@ function Main (props) {
             }
         })
 
+        socket.on("minus point", data=>{
+            if (data.roomID === roomID){
+
+                dingSound.play()
+                if (data.user[0].id === socket.id){
+                 setJumpButton(true)
+                } else {
+                 setJumpButton(false)
+                }
+                setUsers(data.user)
+            }
+        })
+
         socket.on("game over", data=>{
             if (data.roomID === roomID){
                 onGameOver(data.user[0].user)
@@ -301,7 +333,9 @@ function Main (props) {
         socket.on("playagain", data=>{
             if (data.roomID === roomID){
                 setUsers(data.snapshot)
-                setDrawer(data.snapshot[0])
+
+                // setDrawer(data.snapshot[0])
+                drawerRef.current = data.snapshot[0]
             }
         })
 
@@ -309,13 +343,16 @@ function Main (props) {
             if (data.roomID === roomID){
                 setStart(true)
                 setCanvasOn(true)
-                setDrawer(data.user)
+
+                // setDrawer(data.user)
+                drawerRef.current = data.user
             }
         })
 
         socket.on("draw", data=>{
             if (data.roomID === roomID){
-                setDrawerCounter(drawerCounter=>drawerCounter+1)
+                // setDrawerCounter(drawerCounter=>drawerCounter+1)
+                drawerCounter.current += 1
                 onCountDown()
                 setDrawWord(data.word)
             }
@@ -323,7 +360,8 @@ function Main (props) {
 
         socket.on("skip", roomid=>{
             if (roomid === roomID){
-                setDrawerCounter(drawerCounter=>drawerCounter+1)
+                drawerCounter.current += 1
+                // setDrawerCounter(drawerCounter=>drawerCounter+1)
             }
         })
         
@@ -355,7 +393,10 @@ function Main (props) {
         socket.on("all users", (obj) => {
             if (obj.roomID === roomID) {
                 setUsers(users=>obj.usersInThisRoom) 
-                setUserSnapshot(userSnapshot=>obj.userSnapshot) 
+
+                userSnapshot.current = obj.userSnapshot
+                // setUserSnapshot(userSnapshot=>obj.userSnapshot) 
+
                 setIsReady(true)
             }
         });
@@ -367,17 +408,15 @@ function Main (props) {
                 const context = contextRef.current
 
                 image.onload= function(){
-                    var height = window.innerHeight-365
-                    if (window.innerHeight-365 < 270){
-                        height = 270
-                    }
 
-                    context.canvas.width = (window.innerWidth-519)*2 ;
-                    context.canvas.height = (height*2) ;
-                    // canvas.style.width = `${(window.innerWidth-519)}px`;
-                    // canvas.style.height = `${height}px`;
+                    var cheight = (window.innerHeight - 50) *0.5
+                    var cwidth = (window.innerWidth - 320) * 0.85 * 0.9
+
+                    context.canvas.width = cwidth*2 ;
+                    context.canvas.height = cheight*2 ;
+
                     context.scale(2,2)
-                    context.drawImage(image,0,0, window.innerWidth-519, height)
+                    context.drawImage(image,0,0, cwidth, cheight)
                     context.lineWidth = lineWidth
                     context.strokeStyle = color
                     context.lineCap = "round"
@@ -387,16 +426,18 @@ function Main (props) {
         })
 
         socket.on("disconnected", (obj) => {
-
-            var udisconnect = obj.userdisconnect[0].user
-            var userDis = {
-                userid: udisconnect.userid,
-                username: udisconnect.username,
-                profile : udisconnect.profile,
-                status :3 
-            }
-
+            
+            
+                
             if (obj.roomID === roomID) {
+                
+                var udisconnect = obj.userdisconnect[0].user
+                var userDis = {
+                    userid: udisconnect.userid,
+                    username: udisconnect.username,
+                    profile : udisconnect.profile,
+                    status :3 
+                }
 
                 if(peersRef.current.length!== 0){
                     const idx = peersRef.current.findIndex(p => p.peerID === obj.userdisconnect[0].id);
@@ -409,7 +450,7 @@ function Main (props) {
                     resizeVideo()
                 }
                 
-                var userList = obj.usersInThisRoom.filter(e => e.id !== socket.id);
+                // var userList = obj.usersInThisRoom.filter(e => e.id !== socket.id);
                 // alert(JSON.stringify(userList))
 
                 // const peersList = [];
@@ -433,8 +474,10 @@ function Main (props) {
                 // var idx = peersRef.current.findIndex((obj)=>obj.peerID === obj.userdisconnect[0].id)
                
                 // peersRef.current[idx].peer.destroy()
+                userSnapshot.current = obj.snapShots
 
-                setUserSnapshot(userSnapshot=>obj.snapShots)
+                // setUserSnapshot(userSnapshot=>obj.snapShots)
+                
                 setUsers(users=>obj.usersInThisRoom)
                 setAnswerData(answerData=>[...answerData,userDis])
             }
@@ -551,26 +594,16 @@ function Main (props) {
         const context = canvas.getContext("2d")
                 
         const handleResize = e => {
-            // var height = window.innerHeight-365
-            // if (window.innerHeight-365 < 300){
-            //     height = 300
-            // }
-
             var cheight = (window.innerHeight - 50) *0.5
-
             var cwidth = (window.innerWidth - 320) * 0.85 * 0.9
 
             context.canvas.width = cwidth*2 ;
             context.canvas.height = cheight*2 ;
+
             canvas.style.width = cwidth;
-            // canvas.style.height = cheight;
-            // canvas.style.width = `${(window.innerWidth-519)}px`;
             canvas.style.height = `${cheight}px`;
 
             canvasPlace.current.style.width = cwidth;
-            // canvasPlace.current.style.height = cheight;
-
-            // canvasPlace.current.style.width = `${(window.innerWidth-519)}px`;
             canvasPlace.current.style.height = `${cheight}px`;
 
             context.scale(2,2)
@@ -696,9 +729,15 @@ function Main (props) {
         
     }
 
+    const [scare, setScare] = useState(false)
+
     const onJump = ()=>{
         setJumpButton(false)
         socket.emit("jumpscare", roomID)
+        setScare(true)
+        setTimeout(() => {
+            setScare(false)
+        }, 3000);
     }
     //==============================================
 
@@ -712,7 +751,8 @@ function Main (props) {
         if (audioBg && audioBg.current) {
             if (playing) {
                 audioBg.current.play();
-                
+            } else {
+                audioBg.current.pause();
             }
         }
       }, [playing]);
@@ -760,6 +800,8 @@ function Main (props) {
 
         setUserName(location.state.nickname)
         setCharacter(image)
+
+        
 
         var userJoin = {
             userid: USERID,
@@ -924,7 +966,7 @@ function Main (props) {
 
         if (answer!==''){  
             var ansObj
-            if (answer === drawWord && drawingOngoing && drawer.id !== socket.id){  
+            if (answer === drawWord && drawingOngoing && drawerRef.current.id !== socket.id){  
                 //adding point
                 addPoint()
                 setDrawingOngoing(false)
@@ -955,11 +997,14 @@ function Main (props) {
     // countdown timer bar
     const [timerCount, setTimerCount] = useState(false)
     const timer = useRef(null);
+    const top5 = useRef(null);
+    const top2 = useRef(null);
     const dingRef = useRef(null);
 
 
     //when state is drawing
     const onCountDown = ()=>{
+        
         setTopPoint(10)
         setDrawingOngoing(true)
         setTimerCount(true)
@@ -969,11 +1014,11 @@ function Main (props) {
             onShowAnswer()
         }, 90000);
 
-        setTimeout(() => {
+        top5.current = setTimeout(() => {
             setTopPoint(5)
         }, 45000);
 
-        setTimeout(() => {
+        top2.current = setTimeout(() => {
             setTopPoint(2)
         }, 70000);
 
@@ -984,17 +1029,21 @@ function Main (props) {
 
 
     //========drawing============
-    const [isReady, setIsReady] = useState(true) // to check if users is retrieve successfully
+    const [isReady, setIsReady] = useState(false) // to check if users is retrieve successfully
     const [drawWord, setDrawWord] = useState('') // the word to draw
     const [drawModal, setDrawModal] = useState(false) // open up the choose word modal
-    const [isStart, setStart] = useState(true) // to start the game
-    const [canvasOn, setCanvasOn] = useState(true) // is canva on or off
+    const [isStart, setStart] = useState(false) // to start the game
+    const [canvasOn, setCanvasOn] = useState(false) // is canva on or off
     const [drawingOngoing, setDrawingOngoing] = useState(false)
-    const [drawer, setDrawer] = useState({id:socket.id}) // the current drawer
+    // const [drawer, setDrawer] = useState({}) // the current drawer
     const [showAnswer, setShowAnswer] = useState(false)
-    const [drawerCounter, setDrawerCounter] = useState(1)
-    const [userSnapshot, setUserSnapshot] = useState([])
+    // const [drawerCounter, setDrawerCounter] = useState(1)
+    // const [userSnapshot, setUserSnapshot] = useState([])
+    const userSnapshot = useRef([])
     const [showWin, setShowWin] = useState(false)
+
+    const drawerRef = useRef({})
+    const drawerCounter = useRef(0)
 
     const [topPoint, setTopPoint] = useState(10)
     
@@ -1007,12 +1056,14 @@ function Main (props) {
         setShowAnswer(true)
         setCanvasOn(false)
 
-        setTimeout(() => {
+           setTimeout(() => {
            setShowAnswer(false)
            setCanvasOn(true)
-           if (drawer.id === socket.id){
-                socket.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot, counter: drawerCounter})
-           }
+
+
+           if (drawerRef.current.id == socket.id){
+                socket.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot.current, counter: drawerCounter.current})
+           } 
         }, 6000);
     }
     
@@ -1032,22 +1083,25 @@ function Main (props) {
 
     const onSkip = () =>{
         minusPoint()
-        var temp = drawerCounter
+        var temp = drawerCounter.current
 
         if(temp === 0){
             temp = 1
         }
 
-        setDrawerCounter(drawerCounter=>drawerCounter+1)
+        // setDrawerCounter(drawerCounter=>drawerCounter+1)
+        drawerCounter.current += 1
+
         setDrawModal(false)
         socket.emit("skip", roomID)
-        socket.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot, counter: temp})
+        socket.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot.current, counter: temp})
     }
 
     const onDraw = () =>{
         if(drawWord!== ''){
             setDrawingOngoing(true)
-            setDrawerCounter(drawerCounter=>drawerCounter+1)
+            // setDrawerCounter(drawerCounter=>drawerCounter+1)
+            drawerCounter.current += 1
             socket.emit('draw', {roomID: roomID, word:drawWord})
             setDrawModal(false)
             onCountDown()
@@ -1061,7 +1115,7 @@ function Main (props) {
     const addPoint = ()=>{
         var userArr = users
         var idx = userArr.findIndex(x => x.id === socket.id);
-        users[idx].user.points = users[idx].user.points + topPoint 
+        users[idx].user.points = users[idx].user.points + topPoint
         var temp = [...users]
         temp.sort((a, b) => (a.user.points < b.user.points) ? 1 : -1)
         setUsers([...temp])
@@ -1074,7 +1128,7 @@ function Main (props) {
         }
         dingSound.play()
 
-        socket.emit("add point", {roomID: roomID, user: temp});
+        socket.emit("add point", {roomID: roomID, user: temp , id: socket.id});
     }
 
     const minusPoint = ()=>{
@@ -1091,17 +1145,29 @@ function Main (props) {
             setJumpButton(false)
         }
 
-        socket.emit("add point", {roomID: roomID, user: temp});
+        socket.emit("minus point", {roomID: roomID, user: temp});
     }
 
     const onStart = ()=>{
         socket.emit("start", {user : users[0], roomID : roomID})
         setDrawWord('')
         setDrawModal(true)
-        setDrawer(users[0])
+        // setDrawer(users[0])
+        drawerRef.current = users[0]
         setCanvasOn(true)
         setStart(true)
         
+    }
+
+    const onAllAnswer = () =>{
+        clearInterval(timer.current)
+        clearInterval(dingRef.current)
+        clearInterval(top5.current)
+        clearInterval(top2.current)
+        setTimerCount(false)
+        setDrawingOngoing(false)
+        
+        onShowAnswer()
     }
 
     const onGameOver = (user)=>{
@@ -1113,6 +1179,8 @@ function Main (props) {
         setDrawingOngoing(false)
         clearInterval(timer.current)
         clearInterval(dingRef.current)
+        clearInterval(top5.current)
+        clearInterval(top2.current)
         setCanvasOn(false)
         setShowWin(true)
         const canvas = canvasRef.current;
@@ -1127,20 +1195,21 @@ function Main (props) {
         setCanvasOn(false)
         setShowWin(false)
         setShowAnswer(false)
-        setDrawerCounter(1)
+        // setDrawerCounter(1)
+        drawerCounter.current = 1
         setDrawWord('')
         setDrawModal(false)
         socket.emit("playagain", {roomID: roomID, id: socket.id})
     }
 
     const [toolChildSize, setToolChildSize] = useState(0)
-
+    const [firstClick, setFirstClick] = useState(true)
 
 
     return(
         <div style={{width:'100vw', height:'100vh', display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
-        <div onClickCapture={togglePlaying} className="main" style={{ display:'flex', width:'100%', height:'100%' , flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
-            <audio 
+        <div onClickCapture={()=>{ if(firstClick) togglePlaying(); setFirstClick(false); }} className="main" style={{ width:'100%', height:'100%' , flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
+            <audio loop
                 ref={audioBg} 
                 src={bgmusics} 
                 autoPlay={true}
@@ -1153,8 +1222,8 @@ function Main (props) {
                     <div style={{backgroundColor: Constant.DARKER_GREY, width:'100%', minHeight:50, display:'flex', justifyContent:'space-between', alignItems:'center'}}>    
                         <img style={{objectFit:'contain', width:120, height:40,marginRight:10, marginLeft:50}} src={limedrawlogo} alt="Logo" />
                         <img style={{objectFit:'contain', width:200, height:40,marginRight:10, marginLeft:50}} src={halloweenparty} alt="Logo" />
-                        <div onClick={logout} style={{ height:'100%', display:'flex', alignItems:'center'}}>
-                            <IoMdLogOut color="white" size={25} style={{marginRight:20}}/>
+                        <div className="logout-button" onClick={logout} style={{ height:'100%', display:'flex', alignItems:'center'}}>
+                            <IoMdLogOut size={25} style={{marginRight:20}}/>
                         </div>
                     </div>
 
@@ -1236,9 +1305,9 @@ function Main (props) {
 
                                     <canvas
                                         style={{display: canvasOn? 'flex' : 'none'}}
-                                        onMouseDown = {drawer.id === socket.id? startDrawing : null}
-                                        onMouseUp = {drawer.id === socket.id? finishDrawing: null}
-                                        onMouseMove = {drawer.id === socket.id? draw : null}
+                                        onMouseDown = {drawerRef.current.id === socket.id? startDrawing : null}
+                                        onMouseUp = {drawerRef.current.id === socket.id? finishDrawing: null}
+                                        onMouseMove = {drawerRef.current.id === socket.id? draw : null}
                                         onMouseLeave ={()=>{ if (isDrawing)finishDrawing()}}
                                         ref = {canvasRef}
                                     /> 
@@ -1330,7 +1399,7 @@ function Main (props) {
                         {/* bottom */}
                         <div style={{height: peers.length >=3 ?'45%' : '40%', display:'flex', flexWrap:'wrap', justifyContent:'space-evenly'}}>
                             <div style={{position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: videoHeight, width: videoWidth }}> 
-                                <video id="videoElement" style={{backgroundColor:'#444',  border:drawer.id === socket.id ?'4px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
+                                <video id="videoElement" style={{backgroundColor:'#444',  border:drawerRef.current.id === socket.id ?'4px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
                                 <div style={{ color:'white', position:'absolute', bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3}}>
                                     {myself.username}
                                 </div>
@@ -1338,7 +1407,7 @@ function Main (props) {
 
 
                            {peers.map((peer,index)=>{
-                               return <Video key={index} peer={peer} drawer={drawer.id} height={videoHeight} width={videoWidth}/>
+                               return <Video key={index} peer={peer} scare={scare} drawer={drawerRef.current.id} height={videoHeight} width={videoWidth}/>
                            })}                        
                             
 
@@ -1362,7 +1431,7 @@ function Main (props) {
                         </div>
 
                         {/* content */}
-                        <div style={{display:'flex', backgroundColor: Constant.DARKER_GREY, flexDirection:'column', overflowY:'scroll', height: `calc(100% - 50px)`, paddingLeft:10, paddingRight:10, paddingTop:5, paddingBottom:5 }}>
+                        <div style={{display:'flex', backgroundColor: Constant.DARKER_GREY, flexDirection:'column', overflowY:'scroll', height: `calc(100% - 50px)`, paddingLeft:10, paddingRight:5, paddingTop:5, paddingBottom:5 }}>
                             {users.map((e, index)=>{
                                 return <RenderPoints item={e} idx={index} key={index}/>
                             })}
@@ -1454,7 +1523,36 @@ function Main (props) {
 
                 {/* jumpscare */}
                 <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'85%', height:'85%', backgroundColor:'white', borderRadius:15}}/>  
+                
+                {playing ? 
+                <div onClick={()=>{setPlaying(false)}} className="bgsound-button" style={{position:'absolute',borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center',  bottom:20, left:20}}>
+                    <IoMdVolumeHigh size={25} color="white"/>
+                </div>
+                :
+                <div onClick={()=>{setPlaying(true)}} className="bgsound-button" style={{position:'absolute',borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center',  bottom:20, left:20}}>
+                    <IoMdVolumeOff size={25} color="white"/>
+                </div>
+                }
         </div>
+
+            <div className="smallscreen">
+                <img className="smallscreen-img" style={{objectFit:'contain'}} src ={jack} alt={"character"}/>
+                <div style={{color:'lightgrey', fontSize:'1.2rem', maxWidth:'80%',  marginTop:20, marginBottom:20}}>
+                    Opps.. open from your Desktop or Tablet
+                </div>
+                <div style={{color:'grey', fontSize:'1rem', maxWidth:'80%',}}>
+                    We're coming to your phone soon!
+                </div>
+            </div>
+
+            <div className="rotatescreen">
+                <img className="rotatescreen-img" style={{objectFit:'contain', width:'30%', height:'auto'}} src ={rotate} alt={"rotate screen"}/>
+                <div style={{color:'lightgrey', fontSize:'1.4rem', maxWidth:'80%',  marginTop:20, marginBottom:20}}>
+                    Rotate your screen
+                </div>
+            </div>
+
+
         </div>
         
     );

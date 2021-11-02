@@ -5,6 +5,8 @@ import '../App.css'
 import limedrawlogo from '../assets/limedrawlogo.png'
 import halloweenparty from '../assets/halloweenparty.png'
 import fastlime from '../assets/fastlime.png'
+import rotate from '../assets/rotate.png'
+import jack from '../assets/jack.png'
 
 //character
 import bear from '../assets/bear.png'
@@ -21,7 +23,7 @@ import Constant from "../components/Constant";
 //import package
 import Slider from 'react-slick'
 import {FaArrowRight, FaArrowLeft} from 'react-icons/fa'
-import {RiDoorFill} from 'react-icons/ri'
+import {IoPeople} from 'react-icons/io5'
 import {FaPlay} from 'react-icons/fa'
 import {FcGoogle} from 'react-icons/fc'
 import {Howl} from 'howler';
@@ -161,7 +163,8 @@ const Welcome = (props) => {
     // }
 
     return (
-        <div onClickCapture={togglePlaying} className="main" style={{ display:'flex',flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100vw', height:'100vh'}}>
+        <div style={{width:'100vw', height:'100vh', display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
+        <div onClickCapture={togglePlaying} className="main" style={{ flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100vw', height:'100vh'}}>
             <audio 
                 ref={audioBg} 
                 src={bgsound} 
@@ -236,8 +239,8 @@ const Welcome = (props) => {
                                     <div style={{ display:'flex', flexDirection:'column', flexDirection:'column'}}>
                                         <span style={{marginBottom:7, fontSize:12, color:'grey'}}>Create Room and invite friends!</span>
 
-                                        <div onClick={()=>{create()}} className='createroom-button' style={{display:'flex',borderRadius:10, padding:7, justifyContent:'center', alignItems:'center'}}>
-                                            <RiDoorFill size={25}/> 
+                                        <div onClick={()=>{create()}} className='createroom-button' style={{ display:'flex',borderRadius:10, padding:7, justifyContent:'center', alignItems:'center'}}>
+                                            <IoPeople size={25}/> 
                                             <span style={{marginLeft:10}}>Create Room</span>
                                         </div>
 
@@ -251,6 +254,26 @@ const Welcome = (props) => {
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div className="smallscreen">
+                <img className="smallscreen-img" style={{objectFit:'contain'}} src ={jack} alt={"character"}/>
+                <div style={{color:'lightgrey', fontSize:'1.2rem', maxWidth:'80%',  marginTop:20, marginBottom:20}}>
+                    Opps.. open from your Desktop or Tablet
+                </div>
+                <div style={{color:'grey', fontSize:'1rem', maxWidth:'80%',}}>
+                    We're coming to your phone soon!
+                </div>
+            </div>
+
+            <div className="rotatescreen">
+                <img className="rotatescreen-img" style={{objectFit:'contain', width:'30%', height:'auto'}} src ={rotate} alt={"rotate screen"}/>
+                <div style={{color:'lightgrey', fontSize:'1.4rem', maxWidth:'80%',  marginTop:20, marginBottom:20}}>
+                    Rotate your screen
+                </div>
+            </div>
+
+
         </div>
     );
 };

@@ -104,12 +104,7 @@ html {
   background-color: #f0f0f0;
   color:black;
 }
-.main{
-  overflow: clip ;
-  background-image: url(./assets/smallbg.png);
-  background-position: center;
-  background-repeat: repeat;
-}
+
 
 .canvas{
   background-image: url(./assets/canvasbg.png);
@@ -279,9 +274,102 @@ html {
   cursor: pointer;
   background-color: grey;
 }
-/* 
-@media (min-width:1000px){
+
+.bgsound-button{
+  background-color: #2B2B2B;
+}
+
+.bgsound-button:hover{
+  cursor: pointer;
+  background-color: grey;
+}
+
+.logout-button{
+  color:white;
+}
+
+.logout-button:hover{
+  cursor: pointer;
+  color: grey;
+}
+
+.smallscreen{
+  display:none;
+  justify-content: center;
+  align-items: center;
+  background-color: #2B2B2B;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+}
+
+.rotatescreen{
+  display:none;
+  justify-content: center;
+  align-items: center;
+  background-color: #2B2B2B;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+}
+
+
+@media (orientation: landscape){
   .main{
-    font-size: 50px;
+    display: flex;
+    overflow: clip ;
+    background-image: url(./assets/smallbg.png);
+    background-position: center;
+    background-repeat: repeat;
   }
-} */
+
+  .smallscreen-img{
+    width: auto;
+    height: 50%;
+  }
+}
+
+@media (orientation: portrait){
+  .main{
+    display: none;
+  }
+
+  .smallscreen-img{
+    width: 50%;
+    height: auto;
+  }
+  .rotatescreen{
+    display:flex;
+  }
+}
+
+@media (max-width:815px), (max-height:500px)  {
+  .main{
+    display: none;
+  }
+
+  .rotatescreen{
+    display:none;
+  }
+
+  .smallscreen{
+    display:flex;
+   
+  }
+
+}
+
+@media (min-width:500px) and (min-height:815px) and (orientation: portrait) {
+  .main{
+    display: none;
+  }
+
+  .rotatescreen{
+    display:flex;
+  }
+
+  .smallscreen{
+    display:none;
+   
+  }
+}
