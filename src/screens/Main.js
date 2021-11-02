@@ -121,7 +121,7 @@ const RenderPoints = ({item, idx})=>{
     const user = item.user
 
     return(
-        <div style={{backgroundColor:Constant.DARKER_GREY, display:'flex', alignItems:'center', justifyContent:'space-between'}}>
+        <div style={{backgroundColor: item.id === socket.id ? Constant.LIGHTER_GREY : Constant.DARKER_GREY, display:'flex', alignItems:'center', justifyContent:'space-between', paddingRight:16, paddingLeft:10, borderRadius:5}}>
             <div style={{display:'flex', alignItems:'center', }}>
 
                 { idx === 0 &&
@@ -967,30 +967,30 @@ function Main (props) {
             setTimerCount(false)
             setDrawingOngoing(false)
             onShowAnswer()
-        }, 60000);
+        }, 90000);
 
         setTimeout(() => {
             setTopPoint(5)
-        }, 30000);
+        }, 45000);
 
         setTimeout(() => {
             setTopPoint(2)
-        }, 45000);
+        }, 70000);
 
         dingRef.current= setTimeout(() => {
             tickingSound.play()
-        }, 52000);
+        }, 82000);
     }
 
 
     //========drawing============
-    const [isReady, setIsReady] = useState(false) // to check if users is retrieve successfully
+    const [isReady, setIsReady] = useState(true) // to check if users is retrieve successfully
     const [drawWord, setDrawWord] = useState('') // the word to draw
     const [drawModal, setDrawModal] = useState(false) // open up the choose word modal
-    const [isStart, setStart] = useState(false) // to start the game
-    const [canvasOn, setCanvasOn] = useState(false) // is canva on or off
+    const [isStart, setStart] = useState(true) // to start the game
+    const [canvasOn, setCanvasOn] = useState(true) // is canva on or off
     const [drawingOngoing, setDrawingOngoing] = useState(false)
-    const [drawer, setDrawer] = useState({}) // the current drawer
+    const [drawer, setDrawer] = useState({id:socket.id}) // the current drawer
     const [showAnswer, setShowAnswer] = useState(false)
     const [drawerCounter, setDrawerCounter] = useState(1)
     const [userSnapshot, setUserSnapshot] = useState([])
@@ -1013,7 +1013,7 @@ function Main (props) {
            if (drawer.id === socket.id){
                 socket.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot, counter: drawerCounter})
            }
-        }, 7000);
+        }, 6000);
     }
     
 
@@ -1052,6 +1052,7 @@ function Main (props) {
             setDrawModal(false)
             onCountDown()
         } else {
+            errorSound.play()
             alert('Please choose word to draw')
         }
         
@@ -1137,7 +1138,7 @@ function Main (props) {
 
 
     return(
-        <div style={{width:width, height:height, display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
+        <div style={{width:'100vw', height:'100vh', display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
         <div onClickCapture={togglePlaying} className="main" style={{ display:'flex', width:'100%', height:'100%' , flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
             <audio 
                 ref={audioBg} 
@@ -1238,6 +1239,7 @@ function Main (props) {
                                         onMouseDown = {drawer.id === socket.id? startDrawing : null}
                                         onMouseUp = {drawer.id === socket.id? finishDrawing: null}
                                         onMouseMove = {drawer.id === socket.id? draw : null}
+                                        onMouseLeave ={()=>{ if (isDrawing)finishDrawing()}}
                                         ref = {canvasRef}
                                     /> 
                                     
@@ -1360,7 +1362,7 @@ function Main (props) {
                         </div>
 
                         {/* content */}
-                        <div style={{display:'flex', backgroundColor: Constant.DARKER_GREY, flexDirection:'column', overflow:'scroll', height: `calc(100% - 40px)` ,  paddingRight:16, paddingLeft:10}}>
+                        <div style={{display:'flex', backgroundColor: Constant.DARKER_GREY, flexDirection:'column', overflowY:'scroll', height: `calc(100% - 50px)`, paddingLeft:10, paddingRight:10, paddingTop:5, paddingBottom:5 }}>
                             {users.map((e, index)=>{
                                 return <RenderPoints item={e} idx={index} key={index}/>
                             })}
@@ -1368,11 +1370,11 @@ function Main (props) {
                     </div>
 
                     {/* ANSWER */}
-                    <div style={{ height: `calc(100% *0.5)`, width:'100%', display:'flex', flexDirection:'column'}}>
+                    <div style={{ height: `calc(100% *0.5)`, width:'100%', display:'flex',  flexDirection:'column'}}>
 
                         {/* header */}
-                        <div style={{backgroundColor:Constant.LIGHTER_GREY, height:'40px', display:'flex', flexDirection:'row', justifyContent:'flex-start', paddingLeft:16, alignItems:'center'}}>
-                            <span style={{color:"white", fontWeight:'bold', fontSize:14}}>Answers</span>
+                        <div style={{backgroundColor:Constant.LIGHTER_GREY,  display:'flex', minHeight:'40px', flexDirection:'row', justifyContent:'flex-start', paddingLeft:16, alignItems:'center'}}>
+                            <span style={{color:"white", fontWeight:'bold',fontSize:14}}>Answers</span>
                         </div>
 
                         <div className="chat-box" style={{flex:1}}>
