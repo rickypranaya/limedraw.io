@@ -158,7 +158,7 @@ const EnterRoom = (props) => {
     // }
 
     return (
-        <div className="main" onClickCapture={togglePlaying} style={{ display:'flex',flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100%', height:'100vh'}}>
+        <div className="main" onClickCapture={togglePlaying} style={{ display:'flex',flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100vw', height:'100vh'}}>
             <audio 
                 ref={audioBg} 
                 src={bgsound} 

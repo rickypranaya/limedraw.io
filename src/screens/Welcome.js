@@ -161,7 +161,7 @@ const Welcome = (props) => {
     // }
 
     return (
-        <div onClickCapture={togglePlaying} className="main" style={{ display:'flex',flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100%', height:'100vh'}}>
+        <div onClickCapture={togglePlaying} className="main" style={{ display:'flex',flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100vw', height:'100vh'}}>
             <audio 
                 ref={audioBg} 
                 src={bgsound} 

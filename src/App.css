@@ -87,7 +87,7 @@
   color:black;
 }
 .main{
-  overflow: -moz-hidden-unscrollable;
+  overflow: clip ;
   background-image: url(./assets/smallbg.png);
   background-position: center;
   background-repeat: repeat;
