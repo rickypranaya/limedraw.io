@@ -180,7 +180,7 @@ const Video = (props) => {
 
 return (
     <div style={{position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: props.height, width: props.width }}>
-        <video id="videoElement" style={{backgroundColor:'#444', border:props.drawer === props.peer.peerID ?'5px solid #CD0094': '0px', borderRadius:10,height: props.height, width: props.width , justifyContent:'center', objectFit:"cover"}}  ref={ref} autoPlay playsInline />
+        <video id="videoElement" style={{backgroundColor:'#444', border:props.drawer === props.peer.peerID ?'4px solid #CD0094': '0px', borderRadius:10,height: props.height, width: props.width , justifyContent:'center', objectFit:"cover"}}  ref={ref} autoPlay playsInline />
         <div style={{color:'white', position:'absolute',  bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3, fontSize:14}}>
             {props.peer.username}
         </div>
@@ -1330,7 +1330,7 @@ function Main (props) {
                         {/* bottom */}
                         <div style={{height: peers.length >=3 ?'45%' : '40%', display:'flex', flexWrap:'wrap', justifyContent:'space-evenly'}}>
                             <div style={{position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: videoHeight, width: videoWidth }}> 
-                                <video id="videoElement" style={{backgroundColor:'#444',  border:drawer.id === socket.id ?'5px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
+                                <video id="videoElement" style={{backgroundColor:'#444',  border:drawer.id === socket.id ?'4px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
                                 <div style={{ color:'white', position:'absolute', bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3}}>
                                     {myself.username}
                                 </div>
