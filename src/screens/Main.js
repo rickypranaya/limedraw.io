@@ -1309,6 +1309,10 @@ function Main (props) {
                                         onMouseUp = {drawerRef.current.id === socket.id? finishDrawing: null}
                                         onMouseMove = {drawerRef.current.id === socket.id? draw : null}
                                         onMouseLeave ={()=>{ if (isDrawing)finishDrawing()}}
+                                        onTouchStart = {drawerRef.current.id === socket.id? startDrawing : null}
+                                        onTouchEnd = {drawerRef.current.id === socket.id? finishDrawing: null}
+                                        onTouchMove = {drawerRef.current.id === socket.id? draw : null}
+                                        onTouchCancel = {()=>{ if (isDrawing)finishDrawing()}}
                                         ref = {canvasRef}
                                     /> 
                                     
