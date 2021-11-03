@@ -64,7 +64,7 @@ import { generateSlug } from "random-word-slugs";
 //socket connection
 const USERID = uuid();
 // const socket = io.connect('https://limedraw.herokuapp.com/')
-const socket = io.connect('https://limedraw.io/api/')
+const socket = io.connect('http://109.106.255.226:5000')
 // const socket = io.connect('http://localhost:5000')
 
 
