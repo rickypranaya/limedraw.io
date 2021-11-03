@@ -64,8 +64,8 @@ import { generateSlug } from "random-word-slugs";
 //socket connection
 const USERID = uuid();
 // const socket = io.connect('https://limedraw.herokuapp.com/')
-const socket = io.connect('http://109.106.255.226:5000')
-// const socket = io.connect('http://localhost:5000')
+// const socket = io.connect('https://limedraw.io/api')
+const socket = io.connect('https://api.limedraw.io/')
 
 
 // to render chat bubbles
@@ -256,7 +256,7 @@ function Main (props) {
 
     const invite = ()=>{
         setInvite(true)
-        navigator.clipboard.writeText("https://limedrawio.herokuapp.com/enter/"+roomID)
+        navigator.clipboard.writeText("https://limedraw.io/enter/"+roomID)
     }
 
     //me 
@@ -278,7 +278,7 @@ function Main (props) {
 
         socket.on("next drawer", data=>{
             if (data.roomID === roomID && data.userSnapshot.length !== 0){
-                changeSound.play()
+                
                 var counter = drawerCounter.current
                 var dividend = data.userSnapshot.length
                 var index = counter % dividend
@@ -292,6 +292,7 @@ function Main (props) {
         
 
                 if (data.userSnapshot[index].id === socket.id){
+                    changeSound.play()
                     setDrawWord('')
                     setDrawModal(true)
                     setCanvasOn(true)
@@ -303,7 +304,7 @@ function Main (props) {
         socket.on("add point", data=>{
             if (data.roomID === roomID){
 
-                dingSound.play()
+                // dingSound.play()
                 if (data.user[0].id === socket.id){
                  setJumpButton(true)
                 } else {
@@ -316,7 +317,7 @@ function Main (props) {
         socket.on("minus point", data=>{
             if (data.roomID === roomID){
 
-                dingSound.play()
+                // dingSound.play()
                 if (data.user[0].id === socket.id){
                  setJumpButton(true)
                 } else {
@@ -1002,6 +1003,7 @@ function Main (props) {
     const top5 = useRef(null);
     const top2 = useRef(null);
     const dingRef = useRef(null);
+    const showAnswerRef = useRef(null);
 
 
     //when state is drawing
@@ -1057,8 +1059,8 @@ function Main (props) {
         answerSound.play()
         setShowAnswer(true)
         setCanvasOn(false)
-
-           setTimeout(() => {
+         
+        showAnswerRef.current =  setTimeout(() => {
            setShowAnswer(false)
            setCanvasOn(true)
 
@@ -1168,15 +1170,17 @@ function Main (props) {
         clearInterval(top2.current)
         setTimerCount(false)
         setDrawingOngoing(false)
-        
         onShowAnswer()
+            
     }
+
 
     const onGameOver = (user)=>{
         winSound1.play()
         winSound2.play()
         setTimeout(() => {
             setDrawModal(false)
+            clearInterval(showAnswerRef.current)
         }, 500);
         setDrawingOngoing(false)
         clearInterval(timer.current)
@@ -1210,11 +1214,10 @@ function Main (props) {
 
     return(
         <div style={{width:'100vw', height:'100vh', display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
-        <div onClickCapture={()=>{ if(firstClick) togglePlaying(); setFirstClick(false); }} className="main" style={{ width:'100%', height:'100%' , flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
+        <div onClick={()=>{ if(firstClick) togglePlaying(); setFirstClick(false); }} className="main" style={{ width:'100%', height:'100%' , flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
             <audio loop
                 ref={audioBg} 
                 src={bgmusics} 
-                autoPlay={true}
             ></audio>
 
                 {/* left */}
@@ -1482,7 +1485,7 @@ function Main (props) {
                         </div>
                         <img style={{width:'40%', height:'auto'}} src ={nenek} alt={"invite picture"}/>
                         <span style={{fontWeight:'bold', fontSize:18, color: Constant.PRIMARY_COLOR, marginBottom:16}}>Link Copied!</span>  
-                        <span style={{border:'1px solid lightgrey', color:'grey', borderRadius:10, fontSize:14, padding:10}}>{"https://limedrawio.herokuapp.com/enter/"+roomID}</span>
+                        <span style={{border:'1px solid lightgrey', color:'grey', borderRadius:10, fontSize:14, padding:10}}>{"https://limedraw.io/enter/"+roomID}</span>
                         <span style={{color: 'black',fontWeight:'bold',fontSize:18, marginTop:20, marginBottom:20}}>Send to your friends and start scaring them!</span>
                     </div> 
                 </div>
@@ -1528,7 +1531,7 @@ function Main (props) {
                 }
 
                 {/* jumpscare */}
-                <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'85%', height:'85%', backgroundColor:'white', borderRadius:15}}/>  
+                <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'100%', height:'100%', backgroundColor:'white', borderRadius:15}}/>  
                 
                 {playing ? 
                 <div onClick={()=>{setPlaying(false)}} className="bgsound-button" style={{position:'absolute',borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center',  bottom:20, left:20}}>
