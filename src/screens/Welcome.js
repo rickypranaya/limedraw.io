@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useRef} from "react";
-import { v1 as uuid } from "uuid";
+// import { v1 as uuid } from "uuid";
+import { generateSlug } from "random-word-slugs";
 import '../App.css'
 //image
 import limedrawlogo from '../assets/limedrawlogo.png'
@@ -73,8 +74,20 @@ const Welcome = (props) => {
         } else {
             enterSound.play()
             audioBg.current.pause()
-            const roomid = uuid();
-        
+            // const roomid = uuid();
+
+            const slug = generateSlug(3,  {
+                format: "camel",
+                partsOfSpeech: ["adjective", "adjective", "noun"],
+                categories: {
+                  adjective: ["color", "appearance"],
+                  noun: ["animals"],
+                },
+              })
+            
+            const random =   Math.floor(Math.random() * (9999 - 1000) + 1000);
+            const roomid = slug+random;
+
             props.history.replace({     
             pathname: `/room/${roomid}`,
             state:{
