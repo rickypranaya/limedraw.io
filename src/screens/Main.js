@@ -63,8 +63,10 @@ import { generateSlug } from "random-word-slugs";
 
 //socket connection
 const USERID = uuid();
+// const socket = io.connect('https://limedraw.herokuapp.com/')
+// const socket = io.connect('https://limedraw.io/api')
 const socket = io.connect('https://api.limedraw.io/')
-// const socket = io.connect('http://localhost:5000/')
+
 
 // to render chat bubbles
 const RenderBubbles =({item})=>{
@@ -276,7 +278,7 @@ function Main (props) {
 
         socket.on("next drawer", data=>{
             if (data.roomID === roomID && data.userSnapshot.length !== 0){
-                changeSound.play()
+                
                 var counter = drawerCounter.current
                 var dividend = data.userSnapshot.length
                 var index = counter % dividend
@@ -290,6 +292,7 @@ function Main (props) {
         
 
                 if (data.userSnapshot[index].id === socket.id){
+                    changeSound.play()
                     setDrawWord('')
                     setDrawModal(true)
                     setCanvasOn(true)
@@ -301,7 +304,7 @@ function Main (props) {
         socket.on("add point", data=>{
             if (data.roomID === roomID){
 
-                dingSound.play()
+                // dingSound.play()
                 if (data.user[0].id === socket.id){
                  setJumpButton(true)
                 } else {
@@ -314,7 +317,7 @@ function Main (props) {
         socket.on("minus point", data=>{
             if (data.roomID === roomID){
 
-                dingSound.play()
+                // dingSound.play()
                 if (data.user[0].id === socket.id){
                  setJumpButton(true)
                 } else {
@@ -1000,6 +1003,7 @@ function Main (props) {
     const top5 = useRef(null);
     const top2 = useRef(null);
     const dingRef = useRef(null);
+    const showAnswerRef = useRef(null);
 
 
     //when state is drawing
@@ -1055,8 +1059,8 @@ function Main (props) {
         answerSound.play()
         setShowAnswer(true)
         setCanvasOn(false)
-
-           setTimeout(() => {
+         
+        showAnswerRef.current =  setTimeout(() => {
            setShowAnswer(false)
            setCanvasOn(true)
 
@@ -1166,15 +1170,17 @@ function Main (props) {
         clearInterval(top2.current)
         setTimerCount(false)
         setDrawingOngoing(false)
-        
         onShowAnswer()
+            
     }
+
 
     const onGameOver = (user)=>{
         winSound1.play()
         winSound2.play()
         setTimeout(() => {
             setDrawModal(false)
+            clearInterval(showAnswerRef.current)
         }, 500);
         setDrawingOngoing(false)
         clearInterval(timer.current)
@@ -1212,7 +1218,6 @@ function Main (props) {
             <audio loop
                 ref={audioBg} 
                 src={bgmusics} 
-       
             ></audio>
 
                 {/* left */}
@@ -1526,7 +1531,7 @@ function Main (props) {
                 }
 
                 {/* jumpscare */}
-                <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'85%', height:'85%', backgroundColor:'white', borderRadius:15}}/>  
+                <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'100%', height:'100%', backgroundColor:'white', borderRadius:15}}/>  
                 
                 {playing ? 
                 <div onClick={()=>{setPlaying(false)}} className="bgsound-button" style={{position:'absolute',borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center',  bottom:20, left:20}}>
