@@ -1,4 +1,7 @@
-import React, {useEffect, useState, useRef} from 'react'
+import React, {useEffect, useRef} from 'react'
+import useState from 'react-usestateref'
+import 'intro.js/introjs.css';
+import { Steps, Hints } from 'intro.js-react';
 
 //components
 import Constant from '../components/Constant';
@@ -39,6 +42,11 @@ import {AiOutlineCloseCircle} from 'react-icons/ai'
 import {FaPlay } from 'react-icons/fa'
 import {IoMdVolumeHigh} from 'react-icons/io'
 import {IoMdVolumeOff} from 'react-icons/io'
+import {BsFillMicFill} from 'react-icons/bs'
+import {BsFillMicMuteFill} from 'react-icons/bs'
+import {BsCameraVideoFill} from 'react-icons/bs'
+import {BsCameraVideoOffFill} from 'react-icons/bs'
+
 
 //sound
 import sound1 from '../assets/sound1.mp3'
@@ -61,11 +69,11 @@ import { useLocation} from "react-router-dom";
 import { generateSlug } from "random-word-slugs";
 // import Peer from 'peerjs';
 
+
 //socket connection
 const USERID = uuid();
-// const socket = io.connect('https://limedraw.herokuapp.com/')
-// const socket = io.connect('https://limedraw.io/api')
-const socket = io.connect('https://api.limedraw.io/')
+// const socket = io.connect('https://api.limedraw.io/')
+const socket = io.connect('http://localhost:5000/')
 
 
 // to render chat bubbles
@@ -191,7 +199,8 @@ return (
     <div style={{position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: props.height, width: props.width }}>
         <video id="videoElement" style={{backgroundColor:'#444', border:props.drawer === props.peer.peerID ?'4px solid #CD0094': '0px', borderRadius:10,height: props.height, width: props.width , justifyContent:'center', objectFit:"cover"}}  ref={ref} autoPlay playsInline />
         <div style={{color:'white', position:'absolute',  bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3, fontSize:14}}>
-            {props.peer.username}
+            {props.peer.mute === true && <BsFillMicMuteFill color="#FF4A4A" size={15}/>}
+            { props.peer.username}
         </div>
 
         <div style={{ display: props.scare? 'flex': 'none', color:'white', position:'absolute', top:0, right:0, }}>
@@ -233,15 +242,15 @@ function Main (props) {
     ])
 
     //peers users
-    const [peers, setPeers] = useState([])
-    const peersRef = useRef([])
-    const [peersCall, setPeersCall] = useState({})
+    const [peers, setPeers, peersReff] = useState([])
+    // const peersRef = useRef([])
+    // const [peersCall, setPeersCall] = useState({})
     const [users, setUsers] = useState([])
 
     //video webrtc
-    const socketRef = useRef();
+    // const socketRef = useRef();
     const userVideo = useRef();
-    const videoRef = useRef([])
+    // const videoRef = useRef([])
     const roomID = props.match.params.roomID;
     const [userName, setUserName] = useState('')
     const [character, setCharacter] = useState('')
@@ -262,7 +271,6 @@ function Main (props) {
     //me 
     const [myself, setMyself] = useState({})
 
-
     useEffect(()=>{
         socket.on("jumpscare", roomId=>{
             if (roomId === roomID){
@@ -277,10 +285,10 @@ function Main (props) {
         })
 
         socket.on("next drawer", data=>{
-            if (data.roomID === roomID && data.userSnapshot.length !== 0){
+            if (data.roomID === roomID && userSnapshot.current.length !== 0){
                 
                 var counter = drawerCounter.current
-                var dividend = data.userSnapshot.length
+                var dividend = userSnapshot.current.length
                 var index = counter % dividend
                 // console.log("---------------")
                 // console.log(counter)
@@ -288,11 +296,14 @@ function Main (props) {
                 // console.log("index= "+ index)
 
                 // setDrawer(drawer=> data.userSnapshot[index])
-                drawerRef.current = data.userSnapshot[index]
-        
+                drawerRef.current = userSnapshot.current[index]        
 
-                if (data.userSnapshot[index].id === socket.id){
-                    changeSound.play()
+                if (userSnapshot.current[index].id === socket.id){
+                    if (playingRef.current){
+                        changeSound.play()
+                    }
+                    
+                    
                     setDrawWord('')
                     setDrawModal(true)
                     setCanvasOn(true)
@@ -348,7 +359,31 @@ function Main (props) {
                 setCanvasOn(true)
 
                 // setDrawer(data.user)
-                drawerRef.current = data.user
+                // drawerRef.current = data.user
+                drawerRef.current = userSnapshot.current[0]
+            }
+        })
+        socket.on("updateRef",data=>{
+            setPeers(data)
+        })
+
+        socket.on("mute", data=>{
+            if (data.roomID === roomID){
+                const idx = peersReff.current.findIndex(p => p.peerID === data.id);
+                if(idx > -1){
+                    peersReff.current[idx].mute = true
+                    socket.emit("updateRef", peersReff.current)
+                }
+            }
+        })
+
+        socket.on("unmute", data=>{
+            if (data.roomID === roomID){
+                const idx = peersReff.current.findIndex(p => p.peerID === data.id);
+                if(idx > -1){
+                    peersReff.current[idx].mute = false
+                    socket.emit("updateRef", peersReff.current)
+                }
             }
         })
 
@@ -442,14 +477,14 @@ function Main (props) {
                     status :3 
                 }
 
-                if(peersRef.current.length!== 0){
-                    const idx = peersRef.current.findIndex(p => p.peerID === obj.userdisconnect[0].id);
+                if(peersReff.current.length!== 0){
+                    const idx = peersReff.current.findIndex(p => p.peerID === obj.userdisconnect[0].id);
 
-                    peersRef.current[idx].peer.destroy()            
+                    peersReff.current[idx].peer.destroy()            
                     if (idx > -1) {
-                        peersRef.current.splice(idx, 1);
+                        peersReff.current.splice(idx, 1);
                     }
-                    setPeers(peersRef.current)
+                    setPeers(peersReff.current)
                     resizeVideo()
                 }
                 
@@ -561,15 +596,15 @@ function Main (props) {
 
     const resizeVideo = ()=>{
         const width = (window.innerWidth - 320) * 0.4
-        const height = peersRef.current.length >= 3 ? (window.innerHeight - 50) *0.45 *0.8 :  (window.innerHeight - 50) *0.4 *0.8
+        const height = peersReff.current.length >= 3 ? (window.innerHeight - 50) *0.45 *0.8 :  (window.innerHeight - 50) *0.4 *0.8
 
-        if(peersRef.current.length <=1){
+        if(peersReff.current.length <=1){
             setVideoWidth(width)
             setVideoHeight(height)
-        } else if (peersRef.current.length === 2) {
+        } else if (peersReff.current.length === 2) {
             setVideoWidth(width * 0.7)
             setVideoHeight(height /1.2)
-        } else if (peersRef.current.length >= 3){
+        } else if (peersReff.current.length >= 3){
             setVideoWidth(width * 0.6)
             setVideoHeight(height /2)
         }else {
@@ -583,6 +618,7 @@ function Main (props) {
     useEffect(()=>{
         resizeVideo();
     },[peers])
+
 
     // =================== CANVAS ============================
     const [tool, setTool]=useState('pencil')
@@ -681,14 +717,15 @@ function Main (props) {
     //======================================
 
     //========= jumpscare ========
-    const [jumpButton, setJumpButton] = useState(false)
+    const [jumpButton, setJumpButton] = useState(true)
     const [isjumpscare, setIsjumpscare] = useState(false)
     var sound = new Howl({
         src: [sound1]
     });
 
     var tickingSound = new Howl({
-        src: [ticking]
+        src: [ticking],
+        volume:0.5
     });
 
     var dingSound = new Howl({
@@ -745,20 +782,20 @@ function Main (props) {
     //==============================================
 
     // background music
-    const audioBg = useRef(null)
-    const [playing, setPlaying] = useState(false);
+    // const audioBg = useRef(null)
+    const [playing, setPlaying, playingRef] = useState(false);
     const togglePlaying = () => setPlaying((prev) => !prev);
 
-    useEffect(() => {
-        audioBg.current.volume = 0.04
-        if (audioBg && audioBg.current) {
-            if (playing) {
-                audioBg.current.play();
-            } else {
-                audioBg.current.pause();
-            }
-        }
-      }, [playing]);
+    // useEffect(() => {
+    //     audioBg.current.volume = 0.04
+    //     if (audioBg && audioBg.current) {
+    //         if (playing) {
+    //             audioBg.current.play();
+    //         } else {
+    //             audioBg.current.pause();
+    //         }
+    //     }
+    //   }, [playing]);
 
     
 
@@ -812,7 +849,8 @@ function Main (props) {
             profile : image,
             profilenobg: imagenobg,
             points: 0,
-            status :2 
+            status :2,
+            mute: false
         }
 
         setMyself({id: socket.id, username: location.state.nickname})
@@ -879,6 +917,9 @@ function Main (props) {
 
             // attach this stream to window object so you can reuse it later
             window.localStream = stream;
+            window.localStream.getVideoTracks()[0].enabled = false
+
+            
             
             socket.emit("join room", {roomID: roomID, user: userJoin});
 
@@ -890,20 +931,22 @@ function Main (props) {
                     contactlist.forEach(user=>{
                         const peer = createPeer(user.id, socket.id, stream);
 
-                        peersRefList.push({
-                            peerID: user.id,
-                            username: user.user.username,
-                            peer,
-                        })
+                        // peersRefList.push({
+                        //     peerID: user.id,
+                        //     username: user.user.username,
+                        //     mute : user.user.mute,
+                        //     peer,
+                        // })
                         peersList.push({
                             peerID: user.id,
                             username: user.user.username,
+                            mute : user.user.mute,
                             peer: peer,
                         });        
                     })
 
-                    peersRef.current = peersRefList
-                    setPeers(peers=>peersList)       
+                    // peersRef.current = peersRefList
+                    setPeers(peersList)       
                 }         
             })
 
@@ -918,7 +961,7 @@ function Main (props) {
             })
 
             socket.on("receiving returned signal", payload => {
-                const item = peersRef.current.find(p => p.peerID === payload.id);
+                const item = peersReff.current.find(p => p.peerID === payload.id);
                 if (item){
                     item.peer.signal(payload.signal);
                 }
@@ -1027,7 +1070,9 @@ function Main (props) {
         }, 70000);
 
         dingRef.current= setTimeout(() => {
-            tickingSound.play()
+            if (playing){
+                tickingSound.play()
+            }   
         }, 82000);
     }
 
@@ -1056,7 +1101,10 @@ function Main (props) {
         const context = contextRef.current
 
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        answerSound.play()
+        if(playing){
+            answerSound.play()
+        }
+        
         setShowAnswer(true)
         setCanvasOn(false)
          
@@ -1130,7 +1178,11 @@ function Main (props) {
         else {
             setJumpButton(false)
         }
-        dingSound.play()
+
+        if (playing){
+            dingSound.play()
+        }
+       
 
         socket.emit("add point", {roomID: roomID, user: temp , id: socket.id});
     }
@@ -1176,8 +1228,11 @@ function Main (props) {
 
 
     const onGameOver = (user)=>{
-        winSound1.play()
-        winSound2.play()
+        if (playing){
+            winSound1.play()
+            winSound2.play()
+        }
+       
         setTimeout(() => {
             setDrawModal(false)
             clearInterval(showAnswerRef.current)
@@ -1211,14 +1266,104 @@ function Main (props) {
     const [toolChildSize, setToolChildSize] = useState(0)
     const [firstClick, setFirstClick] = useState(true)
 
+    const [ mute, setMute] = useState(false)
+
+    // const onPlaySound = ()=>{
+    //     setPlaying(false)
+    //     // sound.volume(0.0)
+    //     tickingSound.volume(0.0)
+    //     dingSound.volume(0.0) 
+    //     answerSound.volume(0.0)
+    //     winSound1.volume(0.0)
+    //     winSound2.volume(0.0)
+    //     changeSound.volume(0.0)
+    //     errorSound.volume(0.0)
+    // }
+
+    const onPauseSound = ()=>{
+        setPlaying(false)
+        sound.volume(0.0)
+        tickingSound.volume(0.0)
+        dingSound.volume(0.0) 
+        answerSound.volume(0.0)
+        winSound1.volume(0.0)
+        winSound2.volume(0.0)
+        changeSound.volume(0.0)
+        errorSound.volume(0.0)
+    }
+
+    const onUnmute = ()=>{
+        setMute(false)
+        window.localStream.getAudioTracks()[0].enabled = true
+        socket.emit('unmute',{roomID: roomID, id: socket.id})
+    }
+
+    const onMute = ()=>{
+        setMute(true)
+        window.localStream.getAudioTracks()[0].enabled = false
+        socket.emit('mute',{roomID: roomID, id: socket.id})
+    }
+
+    const [videoStarted, setVideoStarted] = useState(true)
+
+    const onStartVideo = ()=>{
+        setVideoStarted(true)
+        window.localStream.getVideoTracks()[0].enabled = true
+    }
+
+    const onStopVideo = ()=>{
+        setVideoStarted(false)
+        window.localStream.getVideoTracks()[0].enabled = false
+    }
+
+    //onboarding
+    const [onboardVisible ,setOnboard ] = useState(true)
+
+    const onboardExit = ()=>{
+        setOnboard(false)
+        setJumpButton (false)
+        window.localStream.getVideoTracks()[0].enabled = true
+    }
+
+      const steps = [
+        {
+          element: '.halloween-logo',
+          intro: `Welcome to the party ${String.fromCodePoint(0x1F47B) + "\n Here's how to play"}`,
+          position: 'bottom',
+         
+        },
+        {
+          element: '.canvas',
+          intro: `Everyone will have 90 sec to draw in turn ${String.fromCodePoint(0x1F58C)}, and the other need to guess it!`,
+        },
+        {
+            element: '.point-section',
+            intro: `If you guess it right, you can get up to +10 points.  ${"\n\n To win you must collect 100 points "+ String.fromCodePoint(0x1F3C6)}`,
+            position: 'left',
+        },
+        {
+            element: '.chat-section',
+            intro: 'you can type the answer and all chats will appear here',
+            position: 'left',
+        },
+        {
+          element: '.ghost-button',
+          intro: `Here's the fun! you can jumpscare your friend if you're on the first position ${String.fromCodePoint(0x1F47B)}`,
+        },
+        {
+            element: '.invite-button',
+            intro: `Let the fun begin ${String.fromCodePoint(0x1F383) +"\n Invite your friends by sending the link."}`,
+            
+        },
+      ];
 
     return(
         <div style={{width:'100vw', height:'100vh', display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
         <div onClick={()=>{ if(firstClick) togglePlaying(); setFirstClick(false); }} className="main" style={{ width:'100%', height:'100%' , flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
-            <audio loop
+            {/* <audio loop
                 ref={audioBg} 
                 src={bgmusics} 
-            ></audio>
+            ></audio> */}
 
                 {/* left */}
                 <div style={{flex:1, width: `calc(100% - 320)`,  display:'flex',  flexDirection:'column',height:'100%'}}>
@@ -1226,7 +1371,7 @@ function Main (props) {
                     {/* header */}
                     <div style={{backgroundColor: Constant.DARKER_GREY, width:'100%', minHeight:50, display:'flex', justifyContent:'space-between', alignItems:'center'}}>    
                         <img style={{objectFit:'contain', width:120, height:40,marginRight:10, marginLeft:50}} src={limedrawlogo} alt="Logo" />
-                        <img style={{objectFit:'contain', width:200, height:40,marginRight:10, marginLeft:50}} src={halloweenparty} alt="Logo" />
+                        <img className="halloween-logo" style={{objectFit:'contain', width:200, height:40,marginRight:10, marginLeft:50}} src={halloweenparty} alt="Logo" />
                         <div className="logout-button" onClick={logout} style={{ height:'100%', display:'flex', alignItems:'center'}}>
                             <IoMdLogOut size={25} style={{marginRight:20}}/>
                         </div>
@@ -1235,7 +1380,7 @@ function Main (props) {
                     {/* main content */}
                     <div style={{height: `calc(100% - 50px)`, width:'100%', display:'flex', flexDirection:'column'}}>
                         {/* top */}
-                        <div style={{ display: 'flex', flexDirection:'row', width:'100%', height: peers.length >=3 ?'55%' : '60%', paddingTop:'2%', paddingBottom:'2%'}}>
+                        <div className="canvas-tools"  style={{ display: 'flex', flexDirection:'row', width:'100%', height: peers.length >=3 ?'55%' : '60%', paddingTop:'2%', paddingBottom:'2%'}}>
 
                             {/* Tools panel */}
                             <div style={{ height:'100%', width:'15%', display:'flex', flexDirection:'column',  justifyContent:'center', alignItems:'center'}}>
@@ -1407,9 +1552,11 @@ function Main (props) {
 
                         {/* bottom */}
                         <div style={{height: peers.length >=3 ?'45%' : '40%', display:'flex', flexWrap:'wrap', justifyContent:'space-evenly'}}>
-                            <div style={{position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: videoHeight, width: videoWidth }}> 
+                            <div style={{ position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: videoHeight, width: videoWidth }}> 
                                 <video id="videoElement" style={{backgroundColor:'#444',  border:drawerRef.current.id === socket.id ?'4px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
-                                <div style={{ color:'white', position:'absolute', bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3}}>
+                                <div style={{ color:'white', position:'absolute',  bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3}}>
+                                    {mute && <BsFillMicMuteFill color="#FF4A4A" size={15}/>}
+
                                     {myself.username}
                                 </div>
                             </div>
@@ -1429,7 +1576,7 @@ function Main (props) {
                 <div style={{backgroundColor:Constant.DARKER_GREY, width: 320, height:'100%', borderLeft: "1px solid #2B2B2B"}}>
 
                     {/* POINTS */}
-                    <div style={{ height: `calc(100% *0.5)`, width:'100%'}}>
+                    <div  className="point-section" style={{ height: `calc(100% *0.5)`, width:'100%'}}>
 
                         {/* header */}
                         <div style={{backgroundColor:Constant.LIGHTER_GREY, height: '40px', paddingRight:16, paddingLeft:16, display:'flex', flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
@@ -1448,7 +1595,7 @@ function Main (props) {
                     </div>
 
                     {/* ANSWER */}
-                    <div style={{ height: `calc(100% *0.5)`, width:'100%', display:'flex',  flexDirection:'column'}}>
+                    <div className={'chat-section'} style={{ height: `calc(100% *0.5)`, width:'100%', display:'flex',  flexDirection:'column'}}>
 
                         {/* header */}
                         <div style={{backgroundColor:Constant.LIGHTER_GREY,  display:'flex', minHeight:'40px', flexDirection:'row', justifyContent:'flex-start', paddingLeft:16, alignItems:'center'}}>
@@ -1530,16 +1677,69 @@ function Main (props) {
                 </div>
                 }
 
-                {/* jumpscare */}
-                <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'100%', height:'100%', backgroundColor:'white', borderRadius:15}}/>  
-                
+               
+                {/* Background music button */}
                 {playing ? 
-                <div onClick={()=>{setPlaying(false)}} className="bgsound-button" style={{position:'absolute',borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center',  bottom:20, left:20}}>
+                <div style={{position:'absolute', bottom:20, left:20, display:'flex', flexDirection:'row', alignItems:'center'}}>         
+                <div onClick={()=>{onPauseSound()}} className="soundeffect-button" style={{borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center', }}>
                     <IoMdVolumeHigh size={25} color="white"/>
                 </div>
+                <div className="soundeffect-label" style={{backgroundColor: Constant.LIGHTER_GREY, marginLeft:10, borderRadius:5, paddingTop:3, paddingBottom:3, paddingLeft:10, paddingRight:10, color:'lightgrey', fontSize:14}}>
+                        Sound Effect On
+                </div>
+                </div>
                 :
-                <div onClick={()=>{setPlaying(true)}} className="bgsound-button" style={{position:'absolute',borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center',  bottom:20, left:20}}>
-                    <IoMdVolumeOff size={25} color="white"/>
+                <div style={{position:'absolute', bottom:20, left:20, display:'flex', flexDirection:'row', alignItems:'center'}}> 
+                <div onClick={()=>{setPlaying(true)}} className="soundeffect-button" style={{borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center', }}>
+                    <IoMdVolumeOff size={25} color="#FF4A4A"/>
+                </div>
+                <div className="soundeffect-label" style={{backgroundColor: Constant.LIGHTER_GREY, marginLeft:10, borderRadius:5, paddingTop:3, paddingBottom:3, paddingLeft:10, paddingRight:10, color:'lightgrey', fontSize:14}}>
+                    Sound Effect Off
+                </div>
+                </div>
+                }
+
+                {/* mic button */}
+                {mute?
+                <div style={{position:'absolute', bottom:65, left:20, display:'flex', flexDirection:'row', alignItems:'center'}}>         
+                    <div onClick={()=>{onUnmute()}} className="mic-button" style={{borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center'}}>
+                        <BsFillMicMuteFill size={20} color="#FF4A4A"/>
+                    </div>
+                    <div className="mic-label" style={{backgroundColor: Constant.LIGHTER_GREY, marginLeft:10, borderRadius:5, paddingTop:3, paddingBottom:3, paddingLeft:10, paddingRight:10, color:'lightgrey', fontSize:14}}>
+                        Unmute
+                    </div>
+                </div>
+                :
+                <div style={{position:'absolute', bottom:65, left:20, display:'flex', flexDirection:'row', alignItems:'center'}}>         
+
+                    <div onClick={()=>{onMute()}} className="mic-button" style={{borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center'}}>
+                        <BsFillMicFill size={20} color="white"/>
+                    </div>
+                    <div className="mic-label" style={{backgroundColor: Constant.LIGHTER_GREY, marginLeft:10, borderRadius:5, paddingTop:3, paddingBottom:3, paddingLeft:10, paddingRight:10, color:'lightgrey', fontSize:14}}>
+                        Mute
+                    </div>
+                </div>
+                }
+
+                {/* start button */}
+                {videoStarted?
+                <div style={{position:'absolute', bottom:110, left:20, display:'flex', flexDirection:'row', alignItems:'center'}}>         
+                    <div onClick={()=>{onStopVideo()}} className="video-button" style={{borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center'}}>
+                        <BsCameraVideoFill size={18} color="white"/>
+                    </div>
+                    <div className="video-label" style={{backgroundColor: Constant.LIGHTER_GREY, marginLeft:10, borderRadius:5, paddingTop:3, paddingBottom:3, paddingLeft:10, paddingRight:10, color:'lightgrey', fontSize:14}}>
+                        Stop Video
+                    </div>
+                </div>
+                :
+                <div style={{position:'absolute', bottom:110, left:20, display:'flex', flexDirection:'row', alignItems:'center'}}>         
+
+                    <div onClick={()=>{onStartVideo()}} className="video-button" style={{borderRadius:5,  width:35, height:35, display:'flex', justifyContent:'center', alignItems:'center'}}>
+                        <BsCameraVideoOffFill size={18} color="#FF4A4A"/>
+                    </div>
+                    <div className="video-label" style={{backgroundColor: Constant.LIGHTER_GREY, marginLeft:10, borderRadius:5, paddingTop:3, paddingBottom:3, paddingLeft:10, paddingRight:10, color:'lightgrey', fontSize:14}}>
+                        Start Video
+                    </div>
                 </div>
                 }
         </div>
@@ -1561,7 +1761,17 @@ function Main (props) {
                 </div>
             </div>
 
-
+             {/* jumpscare */}
+             <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'100%', height:'100%', backgroundColor:'white', borderRadius:15}}/>  
+            {window.localStream &&
+             <Steps
+             exitOnOverlayClick={false}
+                enabled={onboardVisible}
+                steps={steps}
+                initialStep={0}
+                onExit={onboardExit}
+                />
+            }
         </div>
         
     );

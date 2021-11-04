@@ -275,14 +275,58 @@ html {
   background-color: grey;
 }
 
-.bgsound-button{
+.soundeffect-button{
   background-color: #2B2B2B;
 }
 
-.bgsound-button:hover{
+.soundeffect-button:hover{
   cursor: pointer;
   background-color: grey;
 }
+
+.soundeffect-label{
+  display:none
+}
+
+.soundeffect-button:hover + .soundeffect-label {
+  display: flex;
+}
+
+
+.mic-button{
+  background-color: #2B2B2B;
+}
+
+.mic-button:hover  {
+  cursor: pointer;
+  background-color: grey;
+}
+
+.mic-label{
+  display:none
+}
+
+.mic-button:hover + .mic-label {
+  display: flex;
+}
+
+.video-button{
+  background-color: #2B2B2B;
+}
+
+.video-button:hover  {
+  cursor: pointer;
+  background-color: grey;
+}
+
+.video-label{
+  display:none
+}
+
+.video-button:hover + .video-label {
+  display: flex;
+}
+
 
 .logout-button{
   color:white;

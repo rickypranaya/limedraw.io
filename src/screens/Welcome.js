@@ -2,6 +2,8 @@ import React, {useState, useEffect, useRef} from "react";
 // import { v1 as uuid } from "uuid";
 import { generateSlug } from "random-word-slugs";
 import '../App.css'
+
+
 //image
 import limedrawlogo from '../assets/limedrawlogo.png'
 import halloweenparty from '../assets/halloweenparty.png'
@@ -28,6 +30,7 @@ import {IoPeople} from 'react-icons/io5'
 import {FaPlay} from 'react-icons/fa'
 import {FcGoogle} from 'react-icons/fc'
 import {Howl} from 'howler';
+import { GoogleLogin } from 'react-google-login';
 
 //sound
 import bgsound from '../assets/spookybg.mp3'
@@ -175,6 +178,10 @@ const Welcome = (props) => {
     //     event.preventDefault();
     // }
 
+    const responseGoogle = (response)=>{
+        console.log(response)
+    }
+
     return (
         <div style={{width:'100vw', height:'100vh', display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
         <div onClickCapture={togglePlaying} className="main" style={{ flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100vw', height:'100vh'}}>
@@ -257,10 +264,19 @@ const Welcome = (props) => {
                                             <span style={{marginLeft:10}}>Create Room</span>
                                         </div>
 
-                                        <div className="google-login" style={{display:'flex', justifyContent:'center', alignItems:'center', padding:6, width:'auto', borderRadius:10}}>
-                                            <span style={{fontWeight:'bold', color:'grey', marginRight:10}}>Login</span>
-                                            <FcGoogle size = {25}/>
-                                        </div>
+                                        <GoogleLogin
+                                            clientId="468439026905-56607m3tfuc46ij4abaoj2q8umotts7p.apps.googleusercontent.com"
+                                            render={renderProps => (
+                                                <div onClick={renderProps.onClick} className="google-login" style={{display:'flex', justifyContent:'center', alignItems:'center', padding:6, width:'auto', borderRadius:10}}>
+                                                    <FcGoogle size = {25}/>
+                                                    <span style={{fontWeight:'bold', color:'grey', marginLeft:10}}>Login</span>
+                                                    
+                                                </div>
+                                            )}
+                                            onSuccess={responseGoogle}
+                                            onFailure={responseGoogle}
+                                        />
+                                        
                                     </div>
                                 </div>
                             </div>
