@@ -481,7 +481,7 @@ function Main (props) {
                 if(peersReff.current.length!== 0){
                     const idx = peersReff.current.findIndex(p => p.peerID === obj.userdisconnect[0].id);
 
-                    peersReff.current[idx].peer.destroy()            
+                    if (peersReff.current[idx].peer) peersReff.current[idx].peer.destroy()            
                     if (idx > -1) {
                         peersReff.current.splice(idx, 1);
                     }
