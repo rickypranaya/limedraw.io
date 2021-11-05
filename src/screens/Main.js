@@ -1,7 +1,7 @@
 import React, {useEffect, useRef} from 'react'
 import useState from 'react-usestateref'
 import 'intro.js/introjs.css';
-import { Steps, Hints } from 'intro.js-react';
+import { Steps } from 'intro.js-react';
 
 //components
 import Constant from '../components/Constant';
@@ -46,7 +46,6 @@ import {BsFillMicFill} from 'react-icons/bs'
 import {BsFillMicMuteFill} from 'react-icons/bs'
 import {BsCameraVideoFill} from 'react-icons/bs'
 import {BsCameraVideoOffFill} from 'react-icons/bs'
-
 
 //sound
 import sound1 from '../assets/sound1.mp3'
@@ -176,23 +175,21 @@ const Video = (props) => {
             ref.current.srcObject = stream;
         })
 
-        // props.peer.peer.on("close", stream => {
-        //     props.peer.peer.removeStream(stream)
-        // })
     }, []);
 
 
     // useEffect(()=>{
-    //     props.peer.on('stream', userVideoStream =>{
+    //     console.log(props.peer)
+    //     props.peer.peer.on('stream', userVideoStream =>{
     //         ref.current.srcObject = userVideoStream
-            // ref.current.addEventListener('loadedmetadata',()=>{
-            //     ref.current.play()
-            // })
-        // })
+    //         ref.current.addEventListener('loadedmetadata',()=>{
+    //             ref.current.play()
+    //         })
+    //     })
     
-        // props.peer.on('close', ()=>{
-        //     ref.current.remove()
-        // })
+    //     props.peer.peer.on('close', ()=>{
+    //         ref.current.remove()
+    //     })
     // },[])
 
 return (
@@ -216,8 +213,6 @@ function Main (props) {
 
     //* iNITIALIZATION *
     
-
-
     //window size
     const [width, setWindowWidth] = useState(0)
     const [height, setWindowHeight] = useState(0)
@@ -232,22 +227,16 @@ function Main (props) {
 
     // answer data
     const [answer, setAnswer] = useState('')
-    const [answerData, setAnswerData] = useState([
-        // {
-        //     userid: '234',
-        //     username: 'Ricky Pranaya',
-        //     answer: 'Halloween',
-        //     status :'0' 
-        // }
-    ])
+    const [answerData, setAnswerData] = useState([])
 
     //peers users
     const [peers, setPeers, peersReff] = useState([])
     // const peersRef = useRef([])
-    // const [peersCall, setPeersCall] = useState({})
+    const [peersCall, setPeersCall] = useState({})
     const [users, setUsers] = useState([])
 
-    //video webrtc
+    // ========= Video webrtc ===========
+
     // const socketRef = useRef();
     const userVideo = useRef();
     // const videoRef = useRef([])
@@ -256,7 +245,7 @@ function Main (props) {
     const [character, setCharacter] = useState('')
     const [roomType, setRoomType] = useState('')
 
-    //back button press
+    //Back button press
     let history = useHistory();
     let location = useLocation();
     const [isBackButtonClicked, setBackbuttonPress] = useState(false)
@@ -264,14 +253,16 @@ function Main (props) {
     //invite
     const [isInvite, setInvite] = useState(false)
 
+    //myself object 
+    const [myself, setMyself] = useState({})
+
+    //when user click invite buttton
     const invite = ()=>{
         setInvite(true)
         navigator.clipboard.writeText("https://limedraw.io/enter/"+roomID)
     }
 
-    //me 
-    const [myself, setMyself] = useState({})
-
+    // listening to socket
     useEffect(()=>{
         socket.on("jumpscare", roomId=>{
             if (roomId === roomID){
@@ -532,6 +523,7 @@ function Main (props) {
         });
     },[])
 
+    //when user press logout button
     const logout = ()=>{
         errorSound.play()
         if (window.confirm("Do you wanna leave this room?")) {
@@ -547,8 +539,8 @@ function Main (props) {
           }
     }
 
+    // when user pressed back button
     useEffect(() => {
-
         window.history.pushState(null, null, window.location.pathname);
         window.addEventListener('popstate', onBackButtonEvent);
     
@@ -589,21 +581,19 @@ function Main (props) {
         return () => window.removeEventListener("resize",updateDimensions);
     }, []);
 
+    //update dimension function
     const updateDimensions = () => {
         const width = window.innerWidth
         const height = window.innerHeight
 
-
         resizeVideo();
         var size = peers.length >=3 ? (height - 140) *0.4 * 0.8/7 : (height - 140) *0.45 * 0.8/7
         setToolChildSize(size)
-        // console.log(size)
-
         setWindowWidth(width)
         setWindowHeight(height)
     }
 
-
+    //resize the video dimensions
     const resizeVideo = ()=>{
         const width = (window.innerWidth - 320) * 0.4
         const height = peersReff.current.length >= 3 ? (window.innerHeight - 50) *0.45 *0.8 :  (window.innerHeight - 50) *0.4 *0.8
@@ -629,13 +619,11 @@ function Main (props) {
         resizeVideo();
     },[peers])
 
-
     // =================== CANVAS ============================
     const [tool, setTool]=useState('pencil')
     const [lineWidth, setLineWidth] = useState (4)
     const [color, setColor] = useState('black')
     const [isDrawing, setIsDrawing] = useState(false)
-
     const canvasPlace = useRef(null)
 
     useEffect(()=>{        
@@ -668,6 +656,7 @@ function Main (props) {
         return () => window.removeEventListener("resize", handleResize);
     },[])
 
+    //function to start drawing
     const startDrawing = ({nativeEvent})=>{
         const {offsetX, offsetY} = nativeEvent;
         contextRef.current.beginPath()
@@ -675,6 +664,7 @@ function Main (props) {
         setIsDrawing(true)
     }
 
+    //function when finish drawing
     const finishDrawing = ()=>{
         setIsDrawing(false)
         contextRef.current.closePath()
@@ -683,6 +673,8 @@ function Main (props) {
         socket.emit("canvas-data", {room: roomID, data: dataImg})
 
     }
+
+    //function when drawing
     const draw = ({nativeEvent}) =>{
         if (!isDrawing){
             return
@@ -691,13 +683,12 @@ function Main (props) {
         const {offsetX, offsetY} = nativeEvent;
         contextRef.current.lineTo(offsetX, offsetY)
         contextRef.current.stroke()
-
     }
     //======================================================
 
     //========== CANVAS TOOL ===============
+    //to change the color
     const changeColor = (clr)=>{
-
         if (tool !== 'eraser'){
             contextRef.current.strokeStyle = clr
         } else {
@@ -707,12 +698,14 @@ function Main (props) {
         }
     }
 
+    //to change the linewidth
     const changelineWidth = (w)=>{
         if (tool !== 'eraser'){
             contextRef.current.lineWidth = w
         }
     }
 
+    //to change eraser or pencil
     const changeTool = (tool)=>{
         setTool(tool)
         if (tool === "eraser"){
@@ -723,12 +716,12 @@ function Main (props) {
             contextRef.current.lineWidth = lineWidth
         }
     }
-
     //======================================
 
-    //========= jumpscare ========
+    //============== jumpscare =============
     const [jumpButton, setJumpButton] = useState(true)
     const [isjumpscare, setIsjumpscare] = useState(false)
+    const [scare, setScare] = useState(false)
     var sound = new Howl({
         src: [sound1]
     });
@@ -767,20 +760,16 @@ function Main (props) {
         src: [errorsound]
     });
     
-    
-
+    //when jumpscare activated
     const jump = ()=>{
         setIsjumpscare(true)
         sound.play()
         setTimeout(() => {
             setIsjumpscare(false)
         }, 3000);
-        
-        
     }
 
-    const [scare, setScare] = useState(false)
-
+    //when user press jump button
     const onJump = ()=>{
         setJumpButton(false)
         socket.emit("jumpscare", roomID)
@@ -791,7 +780,7 @@ function Main (props) {
     }
     //==============================================
 
-    // background music
+    // ============= Background Music ==============
     // const audioBg = useRef(null)
     const [playing, setPlaying, playingRef] = useState(false);
     const togglePlaying = () => setPlaying((prev) => !prev);
@@ -807,12 +796,10 @@ function Main (props) {
     //     }
     //   }, [playing]);
 
-    
 
     //================= video chat===================
     useEffect(()=>{
     if (location.state){
-
         var image;
         var imagenobg;
         switch (location.state.character) {
@@ -852,8 +839,6 @@ function Main (props) {
         setRoomType(location.state.roomType)
         setCharacter(image)
 
-        
-
         var userJoin = {
             userid: USERID,
             username: location.state.nickname ,
@@ -873,7 +858,7 @@ function Main (props) {
         // }); 
 
         // myPeer.on('open', id=>{
-            // socket.emit("join room", {roomID: roomID, user: userJoin, peerID: id});
+        //     socket.emit("join room", {roomID: roomID, user: userJoin, peerID: id});
         // })
         //============ peer js end =============
         
@@ -887,13 +872,18 @@ function Main (props) {
             })
         }
 
-        // function connectToNewUser (userId, stream){
-        //     const call = myPeer.call(userId, stream)
-        //     setPeers([...peers, call])
-        //     peersCall[userId] = call
-        //     setPeersCall(peersCall)
+        //=========== peer js start ==========
 
+        // function connectToNewUser (user, userId, stream){
+        //     console.log(user)
+        //     const peer = myPeer.call(userId, stream)
+
+        //     setPeers(peers=> [{peerID: userId, username: user.user.username, mute : user.user.mute, peer:peer}])
+        //     // peersCall[userId] = call
+        //     // setPeersCall(peersCall)
         // }
+
+        //============ peer js end =============
     
         navigator.mediaDevices.getUserMedia(
             {
@@ -919,21 +909,32 @@ function Main (props) {
 
                 // socket.on('user-connected', data=>{
                 //     if (data.roomID === roomID){
+                //         var contactlist = data.user.filter(obj => obj.id !== socket.id);
+                //         var peersList=[]
+                //         contactlist.forEach(user=>{
+                //             const peer = myPeer.call(data.userid, stream)
+                //             peersList.push({peerID: data.userid, username: user.user.username, mute : user.user.mute, peer:peer})            
+                //             // connectToNewUser(user, data.userid, stream)      
+                //         })
+
+                //         setPeers(peersList)
+
                         
-                //         connectToNewUser(data.user, stream)
                 //     }
                 // })
 
             //================= peer js end ====================
 
-            // attach this stream to window object so you can reuse it later
+            // attach this stream to window object so can be used later
             window.localStream = stream;
+
+            //first start video is close
             window.localStream.getVideoTracks()[0].enabled = false
-
             
-            
+            //when first joining room
             socket.emit("join room", {roomID: roomID, roomType:location.state.roomType ,user: userJoin});
-
+            
+            // ====== receive peers object from socket ================================
             socket.on("peers", data=>{
                 if (data.roomID === roomID) {
                     const peersList = [];
@@ -941,13 +942,6 @@ function Main (props) {
                     var contactlist = data.user.filter(obj => obj.id !== socket.id);
                     contactlist.forEach(user=>{
                         const peer = createPeer(user.id, socket.id, stream);
-
-                        // peersRefList.push({
-                        //     peerID: user.id,
-                        //     username: user.user.username,
-                        //     mute : user.user.mute,
-                        //     peer,
-                        // })
                         peersList.push({
                             peerID: user.id,
                             username: user.user.username,
@@ -956,35 +950,27 @@ function Main (props) {
                         });        
                     })
 
-                    // peersRef.current = peersRefList
                     setPeers(peersList)       
                 }         
             })
 
             socket.on("user joined", payload =>{       
                 const peer = addPeer(payload.signal, payload.callerID, stream);
-                // peersRef.current.push({
-                //     peerID: payload.callerID,
-                //     peer,
-                // })
-
-                // setPeers(peers => [...peers, peer])
             })
 
             socket.on("receiving returned signal", payload => {
                 const item = peersReff.current.find(p => p.peerID === payload.id);
                 if (item){
                     item.peer.signal(payload.signal);
-                }
-                
+                }     
             }); 
+
+            // =================================================================
         })
     } else {
         history.replace(`/enter/${roomID}`);
     }
-
     },[])
-
 
     function createPeer(userToSignal, callerID, stream) {
         const peer = new Peer({
@@ -1017,11 +1003,11 @@ function Main (props) {
 
     //================================================
     
-    //handle send answer
+    //========== Handling send answer ===============
     const sendAnswer = async (event)=>{
         event.preventDefault();
-
-        if (answer!==''){  
+    
+        if (/\S/.test(answer) ){  
             var ansObj
             if (answer === drawWord && drawingOngoing && drawerRef.current.id !== socket.id){  
                 //adding point
@@ -1063,7 +1049,7 @@ function Main (props) {
     //when state is drawing
     const onCountDown = ()=>{
         
-        setTopPoint(10)
+        setTopPoint(20)
         setDrawingOngoing(true)
         setTimerCount(true)
         timer.current = setTimeout(() => {
@@ -1073,11 +1059,11 @@ function Main (props) {
         }, 90000);
 
         top5.current = setTimeout(() => {
-            setTopPoint(5)
+            setTopPoint(10)
         }, 45000);
 
         top2.current = setTimeout(() => {
-            setTopPoint(2)
+            setTopPoint(5)
         }, 70000);
 
         dingRef.current= setTimeout(() => {
@@ -1095,20 +1081,15 @@ function Main (props) {
     const [isStart, setStart] = useState(false) // to start the game
     const [canvasOn, setCanvasOn] = useState(false) // is canva on or off
     const [drawingOngoing, setDrawingOngoing] = useState(false)
-    // const [drawer, setDrawer] = useState({}) // the current drawer
     const [showAnswer, setShowAnswer] = useState(false)
-    // const [drawerCounter, setDrawerCounter] = useState(1)
-    // const [userSnapshot, setUserSnapshot] = useState([])
-    const userSnapshot = useRef([])
     const [showWin, setShowWin] = useState(false)
+    const [topPoint, setTopPoint] = useState(20)
 
+    const userSnapshot = useRef([])
     const drawerRef = useRef({})
     const drawerCounter = useRef(0)
-
-    const [topPoint, setTopPoint] = useState(10)
     
     const onShowAnswer = ()=>{
-        const canvas = canvasRef.current;
         const context = contextRef.current
 
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
@@ -1129,7 +1110,6 @@ function Main (props) {
            } 
         }, 6000);
     }
-    
 
     const onRandom = ()=>{
         const slug = generateSlug(1, {
@@ -1141,8 +1121,6 @@ function Main (props) {
           });
           setDrawWord(slug)
     }
-
-    
 
     const onSkip = () =>{
         minusPoint()
@@ -1223,7 +1201,6 @@ function Main (props) {
         drawerRef.current = users[0]
         setCanvasOn(true)
         setStart(true)
-        
     }
 
     const onAllAnswer = () =>{
@@ -1233,10 +1210,8 @@ function Main (props) {
         clearInterval(top2.current)
         setTimerCount(false)
         setDrawingOngoing(false)
-        onShowAnswer()
-            
+        onShowAnswer()       
     }
-
 
     const onGameOver = (user)=>{
         if (playing){
@@ -1274,22 +1249,14 @@ function Main (props) {
         socket.emit("playagain", {roomID: roomID, id: socket.id})
     }
 
+    const onHandleDrawWord = (val)=>{
+        var temp = val.replace(/\s*/g,"")
+        setDrawWord(temp.toLowerCase())
+    }
+
     const [toolChildSize, setToolChildSize] = useState(0)
     const [firstClick, setFirstClick] = useState(true)
-
     const [ mute, setMute] = useState(false)
-
-    // const onPlaySound = ()=>{
-    //     setPlaying(false)
-    //     // sound.volume(0.0)
-    //     tickingSound.volume(0.0)
-    //     dingSound.volume(0.0) 
-    //     answerSound.volume(0.0)
-    //     winSound1.volume(0.0)
-    //     winSound2.volume(0.0)
-    //     changeSound.volume(0.0)
-    //     errorSound.volume(0.0)
-    // }
 
     const onPauseSound = ()=>{
         setPlaying(false)
@@ -1327,7 +1294,7 @@ function Main (props) {
         window.localStream.getVideoTracks()[0].enabled = false
     }
 
-    //onboarding
+    // ================== Onboarding ===================
     const [onboardVisible ,setOnboard ] = useState(true)
 
     const onboardExit = ()=>{
@@ -1349,7 +1316,7 @@ function Main (props) {
         },
         {
             element: '.point-section',
-            intro: `If you guess it right, you can get up to +10 points.  ${"\n\n To win you must collect 100 points "+ String.fromCodePoint(0x1F3C6)}`,
+            intro: `If you guess it right, you can get up to +20 points.  ${"\n\n To win you must collect 100 points "+ String.fromCodePoint(0x1F3C6)}`,
             position: 'left',
         },
         {
@@ -1381,7 +1348,7 @@ function Main (props) {
         },
         {
             element: '.point-section',
-            intro: `If you guess it right, you can get up to +10 points.  ${"\n\n To win you must collect 100 points "+ String.fromCodePoint(0x1F3C6)}`,
+            intro: `If you guess it right, you can get up to +20 points.  ${"\n\n To win you must collect 100 points "+ String.fromCodePoint(0x1F3C6)}`,
             position: 'left',
         },
         {
@@ -1695,7 +1662,7 @@ function Main (props) {
                                     setDrawWord('')
                                 }}
                                 onChange={(val)=>{
-                                    setDrawWord(val.target.value)
+                                    onHandleDrawWord(val.target.value)
                                 }}
                                 name='message' 
                                 className='input-draw' 
