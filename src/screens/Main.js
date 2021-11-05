@@ -477,9 +477,6 @@ function Main (props) {
         })
 
         socket.on("disconnected", (obj) => {
-            
-            
-                
             if (obj.roomID === roomID) {
                 
                 var udisconnect = obj.userdisconnect[0].user
@@ -1412,7 +1409,7 @@ function Main (props) {
             ></audio> */}
 
                 {/* left */}
-                <div style={{flex:1, width: `calc(100% - 320)`,  display:'flex',  flexDirection:'column',height:'100%'}}>
+                <div style={{ flex:1, width: `calc(100% - 320)`,  display:'flex',  flexDirection:'column',height:'100%'}}>
                     
                     {/* header */}
                     <div style={{backgroundColor: Constant.DARKER_GREY, width:'100%', minHeight:50, display:'flex', justifyContent:'space-between', alignItems:'center'}}>    
@@ -1424,7 +1421,7 @@ function Main (props) {
                     </div>
 
                     {/* main content */}
-                    <div style={{height: `calc(100% - 50px)`, width:'100%', display:'flex', flexDirection:'column'}}>
+                    <div style={{flex:1, width:'100%', display:'flex', flexDirection:'column'}}>
                         {/* top */}
                         <div className="canvas-tools"  style={{ display: 'flex', flexDirection:'row', width:'100%', height: peers.length >=3 ?'55%' : '60%', paddingTop:'2%', paddingBottom:'2%'}}>
 
@@ -1597,7 +1594,7 @@ function Main (props) {
 
 
                         {/* bottom */}
-                        <div style={{height: peers.length >=3 ?'45%' : '40%', display:'flex', flexWrap:'wrap', justifyContent:'space-evenly'}}>
+                        <div style={{ height: peers.length >=3 ?'45%' : '40%', display:'flex', flexWrap:'wrap', justifyContent:'space-evenly'}}>
                             <div style={{ position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: videoHeight, width: videoWidth }}> 
                                 <video id="videoElement" style={{backgroundColor:'#444',  border:drawerRef.current.id === socket.id ?'4px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
                                 <div style={{ color:'white', position:'absolute',  bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3}}>
@@ -1813,7 +1810,7 @@ function Main (props) {
              <img src={ghost1}  style={{display:isjumpscare?'flex': 'none', objectFit:'cover' ,position:'absolute', width:'100%', height:'100%', backgroundColor:'white', borderRadius:15}}/>  
             {window.localStream &&
              <Steps
-             exitOnOverlayClick={false}
+                exitOnOverlayClick={false}
                 enabled={onboardVisible}
                 steps={roomType === 'public'?  stepsPublic: stepsPrivate}
                 initialStep={0}
