@@ -122,7 +122,7 @@ const Welcome = (props) => {
         const roomidTemp = slug+random; // just in case room is unavailable
         
         var roomid;
-        axios.post(`http://localhost:5000/available-group`,{roomID: roomidTemp})
+        axios.post(`https://api.limedraw.io/available-group`,{roomID: roomidTemp})
         .then(res => {
                 roomid = res.data
                 props.history.replace({     
