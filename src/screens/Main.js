@@ -38,7 +38,7 @@ import {RiPencilFill} from 'react-icons/ri';
 import {BsEraserFill} from 'react-icons/bs';
 import {IoMdLogOut} from 'react-icons/io';
 import {SiGhostery} from 'react-icons/si'
-import {AiOutlineCloseCircle} from 'react-icons/ai'
+import {AiOutlineClose} from 'react-icons/ai'
 import {FaPlay } from 'react-icons/fa'
 import {IoMdVolumeHigh} from 'react-icons/io'
 import {IoMdVolumeOff} from 'react-icons/io'
@@ -72,8 +72,8 @@ import { generateSlug } from "random-word-slugs";
 
 //socket connection
 const USERID = uuid();
-const socket = io.connect('https://api.limedraw.io/')
-// const socket = io.connect('http://localhost:5000/')
+// const socket = io.connect('https://api.limedraw.io/')
+const socket = io.connect('http://localhost:5000/')
 
 
 // to render chat bubbles
@@ -254,6 +254,7 @@ function Main (props) {
     const roomID = props.match.params.roomID;
     const [userName, setUserName] = useState('')
     const [character, setCharacter] = useState('')
+    const [roomType, setRoomType] = useState('')
 
     //back button press
     let history = useHistory();
@@ -439,6 +440,18 @@ function Main (props) {
             }
         });
 
+        socket.once("room started", (obj) => {
+            history.replace("/")
+            errorSound.play()
+            alert('The room has started! please come back later or create a new one.')
+        });
+
+        socket.once("room full", (obj) => {
+            history.replace("/")
+            errorSound.play()
+            alert('The room is full (max 6 players), please create a new one.')
+        });
+
         socket.on("canvas-data", data =>{
             if (data.room === roomID) {
                 var image = new Image()
@@ -525,7 +538,7 @@ function Main (props) {
     const logout = ()=>{
         errorSound.play()
         if (window.confirm("Do you wanna leave this room?")) {
-            socket.close()
+            socket.emit("logout")
             // userVideo.current = null
             window.localStream.getTracks().forEach((track) => {
                 track.stop();
@@ -558,7 +571,7 @@ function Main (props) {
             errorSound.play()
           if (window.confirm("Do you wanna leave this room?")) {
             setBackbuttonPress(true)
-            socket.close()
+            socket.emit("logout")
             // userVideo.current = null
             window.localStream.getTracks().forEach((track) => {
                 track.stop();
@@ -839,6 +852,7 @@ function Main (props) {
         }
 
         setUserName(location.state.nickname)
+        setRoomType(location.state.roomType)
         setCharacter(image)
 
         
@@ -921,7 +935,7 @@ function Main (props) {
 
             
             
-            socket.emit("join room", {roomID: roomID, user: userJoin});
+            socket.emit("join room", {roomID: roomID, roomType:location.state.roomType ,user: userJoin});
 
             socket.on("peers", data=>{
                 if (data.roomID === roomID) {
@@ -1325,7 +1339,7 @@ function Main (props) {
         window.localStream.getVideoTracks()[0].enabled = true
     }
 
-      const steps = [
+      const stepsPrivate = [
         {
           element: '.halloween-logo',
           intro: `Welcome to the party ${String.fromCodePoint(0x1F47B) + "\n Here's how to play"}`,
@@ -1352,7 +1366,39 @@ function Main (props) {
         },
         {
             element: '.invite-button',
-            intro: `Let the fun begin ${String.fromCodePoint(0x1F383) +"\n Invite your friends by sending the link."}`,
+            intro: `Let the fun begin ${String.fromCodePoint(0x1F383) +"\n Invite your friends by sending the link. (Max 6 players)"}`,
+            
+        },
+      ];
+
+      const stepsPublic = [
+        {
+          element: '.halloween-logo',
+          intro: `Welcome to the party ${String.fromCodePoint(0x1F47B) + "\n Here's how to play"}`,
+          position: 'bottom',
+         
+        },
+        {
+          element: '.canvas',
+          intro: `Everyone will have 90 sec to draw in turn ${String.fromCodePoint(0x1F58C)}, and the other need to guess it!`,
+        },
+        {
+            element: '.point-section',
+            intro: `If you guess it right, you can get up to +10 points.  ${"\n\n To win you must collect 100 points "+ String.fromCodePoint(0x1F3C6)}`,
+            position: 'left',
+        },
+        {
+            element: '.chat-section',
+            intro: 'you can type the answer and all chats will appear here',
+            position: 'left',
+        },
+        {
+          element: '.ghost-button',
+          intro: `Here's the fun! you can jumpscare others if you're on the first position ${String.fromCodePoint(0x1F47B)}`,
+        },
+        {
+            element: '.halloween-logo',
+            intro: `Let the fun begin ${String.fromCodePoint(0x1F383)}`,
             
         },
       ];
@@ -1531,7 +1577,7 @@ function Main (props) {
                                                     </div>
                                                 </div>
                                                 :
-                                                <span style={{fontWeight:'bold', fontSize:20, marginBottom:20, color:Constant.PRIMARY_COLOR}} >Waiting for friends to join the room...</span>
+                                                <span style={{fontWeight:'bold', fontSize:20, marginBottom:20, color:Constant.PRIMARY_COLOR}} >{roomType == "public" ? "Waiting for people to join the room...": "Waiting for friends to join the room..."}</span>
                                             } 
                                          </div>
 
@@ -1581,9 +1627,11 @@ function Main (props) {
                         {/* header */}
                         <div style={{backgroundColor:Constant.LIGHTER_GREY, height: '40px', paddingRight:16, paddingLeft:16, display:'flex', flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
                             <span style={{color:"white", fontWeight:'bold' ,fontSize:14}}>Points</span>
+                            {roomType === 'private' && 
                             <div className="invite-button" onClick={invite} style={{cursor:'pointer', color:'white', padding:5, borderRadius:5, fontSize:13, fontWeight:'bold'}}>
                                 + Invite friends
                             </div>
+                            }
                         </div>
 
                         {/* content */}
@@ -1627,8 +1675,8 @@ function Main (props) {
                 <div  style={{position:'absolute', width:'100%', height:'100%', backgroundColor:'rgba(0,0,0,0.4)', display: isInvite ?'flex': 'none', justifyContent:'center', alignItems:'center'}}>
                     <div style={{backgroundColor:'white', maxWidth:'40%',display:'flex', flexDirection:'column', alignItems:'center', padding:16, borderRadius:20}}>
                         <div onClick={()=>{setInvite(false)}} style={{display:'flex', width:'100%',flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}> 
-                            <AiOutlineCloseCircle size={25} color="white"/>
-                            <AiOutlineCloseCircle size={25} color="black" />
+                            <AiOutlineClose size={20} color="white"/>
+                            <AiOutlineClose size={20} color="black" />
                         </div>
                         <img style={{width:'40%', height:'auto'}} src ={nenek} alt={"invite picture"}/>
                         <span style={{fontWeight:'bold', fontSize:18, color: Constant.PRIMARY_COLOR, marginBottom:16}}>Link Copied!</span>  
@@ -1767,7 +1815,7 @@ function Main (props) {
              <Steps
              exitOnOverlayClick={false}
                 enabled={onboardVisible}
-                steps={steps}
+                steps={roomType === 'public'?  stepsPublic: stepsPrivate}
                 initialStep={0}
                 onExit={onboardExit}
                 />

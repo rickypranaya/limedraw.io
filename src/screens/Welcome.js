@@ -10,6 +10,8 @@ import halloweenparty from '../assets/halloweenparty.png'
 import fastlime from '../assets/fastlime.png'
 import rotate from '../assets/rotate.png'
 import jack from '../assets/jack.png'
+import twopeople from '../assets/twopeople.png'
+import sixpeople from '../assets/sixpeople.png'
 
 //character
 import bear from '../assets/bear.png'
@@ -31,6 +33,8 @@ import {FaPlay} from 'react-icons/fa'
 import {FcGoogle} from 'react-icons/fc'
 import {Howl} from 'howler';
 import { GoogleLogin } from 'react-google-login';
+import {AiOutlineClose} from 'react-icons/ai'
+import axios from 'axios';
 
 //sound
 import bgsound from '../assets/spookybg.mp3'
@@ -95,12 +99,41 @@ const Welcome = (props) => {
             pathname: `/room/${roomid}`,
             state:{
                 nickname : nickname,
-                character : character
+                character : character,
+                roomType: 'private'
             }
            });
 
            
         }  
+    }
+
+    function joinGroup() {  
+        const slug = generateSlug(3,  {
+            format: "camel",
+            partsOfSpeech: ["adjective", "adjective", "noun"],
+            categories: {
+              adjective: ["color", "appearance"],
+              noun: ["animals"],
+            },
+          })
+        
+        const random =   Math.floor(Math.random() * (9999 - 1000) + 1000);
+        const roomidTemp = slug+random; // just in case room is unavailable
+        
+        var roomid;
+        axios.post(`http://localhost:5000/available-group`,{roomID: roomidTemp})
+        .then(res => {
+                roomid = res.data
+                props.history.replace({     
+                    pathname: `/room/${roomid}`,
+                    state:{
+                        nickname : nickname,
+                        character : character,
+                        roomType: 'public'
+                    }
+                });
+        })
     }
 
     const NextArrow = ({onClick})=>{
@@ -182,6 +215,9 @@ const Welcome = (props) => {
         console.log(response)
     }
 
+    const [playType , setPlayType] = useState(0)
+    const [playModal, setPlayModal] = useState(false)
+
     return (
         <div style={{width:'100vw', height:'100vh', display:'flex', flexDirection:'row', justifyContent:'center', alignItems:'center'}}>
         <div onClickCapture={togglePlaying} className="main" style={{ flexDirection:'column', justifyContent:'center', alignItems:'center', width:'100vw', height:'100vh'}}>
@@ -195,7 +231,7 @@ const Welcome = (props) => {
                 <div style={{display:'flex', flexDirection:'row', justifyContent:'space-between'}}>
                     <img style={{objectFit:'contain', width: '25%', height:'auto',}} src={limedrawlogo} alt="Logo" />
                     <div style={{color:'white', display:'flex', flexDirection:'row', justifyContent:'flex-end', alignItems:'flex-end'}}>
-                        <span style={{fontWeight:'bold'}}> By </span>
+                        <span style={{fontWeight:'bold', fontSize:14}}> By </span>
                         <img style={{objectFit:'contain', marginLeft:10, width: '18%', height:'auto'}} src={fastlime} alt="Logo" />
                     </div>
                 </div>
@@ -245,7 +281,16 @@ const Welcome = (props) => {
                                             value={nickname}
                                         />
 
-                                        <div className='play-button' onClick={()=>{ errorSound.play(); alert('Feature coming soon!');}} style={{cursor:'pointer', borderRadius:10, marginTop:20,  padding:10, justifyContent:'center', alignItems:'center', display:'flex'}}>
+                                        <div className='play-button' onClick={()=>{ 
+                                            if (nickname === ''){
+                                                errorSound.play()
+                                                alert('Please type your nickname')
+                                            } else {
+                                                enterSound.play()
+                                                setPlayModal(true)}
+                                            }
+                                            
+                                            } style={{cursor:'pointer', borderRadius:10, marginTop:20,  padding:10, justifyContent:'center', alignItems:'center', display:'flex'}}>
                                            <FaPlay/> 
                                            <span style={{marginLeft:10, fontWeight:'bold'}}>PLAY!</span>
                                         </div>
@@ -301,7 +346,45 @@ const Welcome = (props) => {
                     Rotate your screen
                 </div>
             </div>
+            
+            {/* play modal */}
+            {playModal &&
+            <div style={{position:'absolute', backgroundColor:'rgba(0,0,0,0.5)', zIndex:1000, width:'100%', height:'100%', display: 'flex', justifyContent:'center', alignItems:'center'}}>
+                <div style={{backgroundColor:'white',position:'relative', borderRadius:20, padding:20, display:'flex', flexDirection:'column',justifyContent:'center', alignItems:'center'}}>
+                    <AiOutlineClose onClick={()=>{setPlayModal(false)}} size={20} color="black" style={{position:'absolute', top:10, right:10}} />
+                    <div style={{fontSize:20, fontWeight:'bold'}}>Let The Fun Begin {String.fromCodePoint(0x1F47B)}</div>
+                    <div style={{color:'grey', margin:10, fontSize:15}}>Who do you wanna play with?</div>
+                    
+                    <div style={{display:'flex', flexDirection:'row'}}>
+                        <div onClick={()=>{setPlayType(0)}} style={{margin:15, backgroundColor:'white', boxShadow:'0px 0px 15px rgba(0,0,0,0.1)', border: playType==0 ?'2px solid #CD0094' : '0px solid #CD0094', borderRadius:15}}> 
+                            <img style={{objectFit:'contain', marginLeft:10, width: 120, height:120}} src={twopeople} alt="match picture" />
+                            <div style={{paddingBottom:5, fontWeight:'bold', fontSize:14}}>Random</div>  
+                            <div style={{paddingBottom:20, color:'grey', fontSize:12}}>2 persons</div>          
+           
+                        </div>
 
+                        <div onClick={()=>{setPlayType(1)}} style={{margin:15, backgroundColor:'white', boxShadow:'0px 0px 15px rgba(0,0,0,0.1)', border: playType==1 ?'2px solid #CD0094' : '0px solid #CD0094', borderRadius:15}}> 
+                            <img style={{objectFit:'contain', marginLeft:10, width: 120, height:120}} src={sixpeople} alt="group picture" />
+                            <div style={{paddingBottom:5, fontWeight:'bold', fontSize:14}}>Join Group</div>       
+                            <div style={{paddingBottom:20, color:'grey', fontSize:12}}>Up to 6 persons</div>          
+                        </div>
+                    </div>
+
+                    <div className='play-button' onClick={()=>{
+                        if (playType === 1){
+                            joinGroup()
+                        } else {
+                            errorSound.play()
+                            alert('Feature coming soon... Join a group of random people for now.')
+                        }
+
+                    }} style={{cursor:'pointer',color:'white', paddingLeft:20, paddingRight:20, borderRadius:10, marginTop:20,  padding:10, justifyContent:'center', alignItems:'center', display:'flex'}}>
+                            <FaPlay/> 
+                            <span style={{marginLeft:10, fontWeight:'bold'}}>START</span>
+                        </div>
+                </div>
+            </div>
+            }
 
         </div>
     );
