@@ -61,7 +61,7 @@ import errorsound from '../assets/error.mp3'
 //import packages
 import io from 'socket.io-client'
 import Peer from 'simple-peer'
-import {Howl} from 'howler';
+// import {Howl} from 'howler';
 import { v1 as uuid } from "uuid";
 import { useHistory } from 'react-router';
 import { useLocation} from "react-router-dom";
@@ -71,7 +71,7 @@ import { generateSlug } from "random-word-slugs";
 
 //socket connection
 const USERID = uuid();
-const socket = io.connect('https://api.limedraw.io/')
+// const socket = io.connect('https://api.limedraw.io/')
 // const socket = io.connect('http://localhost:5000/')
 
 
@@ -132,11 +132,11 @@ const RenderBubbles =({item})=>{
 
 
 // to render points item
-const RenderPoints = ({item, idx})=>{
+const RenderPoints = ({item, idx, socketid})=>{
     const user = item.user
 
     return(
-        <div style={{backgroundColor: item.id === socket.id ? Constant.LIGHTER_GREY : Constant.DARKER_GREY, display:'flex', alignItems:'center', justifyContent:'space-between', paddingRight:16, paddingLeft:10, borderRadius:5}}>
+        <div style={{backgroundColor: item.id === socketid ? Constant.LIGHTER_GREY : Constant.DARKER_GREY, display:'flex', alignItems:'center', justifyContent:'space-between', paddingRight:16, paddingLeft:10, borderRadius:5}}>
             <div style={{display:'flex', alignItems:'center', }}>
 
                 { idx === 0 &&
@@ -170,11 +170,19 @@ const Video = (props) => {
     const ref = useRef();
     
     useEffect(() => {
-        
-        props.peer.peer.on("stream", stream => {
-            ref.current.srcObject = stream;
-        })
-
+        if (props.peer.peer){
+            props.peer.peer.on("stream", stream => {
+                ref.current.srcObject = stream;
+            })
+    
+            props.peer.peer.on('error', (err) => {
+                props.peer.peer.destroy()
+            })
+    
+            props.peer.peer.on("close", () => {
+                props.peer.peer.destroy()
+            })
+        }
     }, []);
 
 
@@ -212,6 +220,8 @@ return (
 function Main (props) {
 
     //* iNITIALIZATION *
+
+    const socketRef = useRef();
     
     //window size
     const [width, setWindowWidth] = useState(0)
@@ -262,272 +272,11 @@ function Main (props) {
         navigator.clipboard.writeText("https://limedraw.io/enter/"+roomID)
     }
 
-    // listening to socket
-    useEffect(()=>{
-        socket.on("jumpscare", roomId=>{
-            if (roomId === roomID){
-                jump()
-            }
-        })
-
-        socket.on("all answer", roomId=>{
-            if (roomId === roomID){
-                onAllAnswer()
-            }
-        })
-
-        socket.on("next drawer", data=>{
-            if (data.roomID === roomID && userSnapshot.current.length !== 0){
-                
-                var counter = drawerCounter.current
-                var dividend = userSnapshot.current.length
-                var index = counter % dividend
-                // console.log("---------------")
-                // console.log(counter)
-                // console.log(data.userSnapshot)
-                // console.log("index= "+ index)
-
-                // setDrawer(drawer=> data.userSnapshot[index])
-                drawerRef.current = userSnapshot.current[index]        
-
-                if (userSnapshot.current[index].id === socket.id){
-                    if (playingRef.current){
-                        changeSound.play()
-                    }
-                    
-                    
-                    setDrawWord('')
-                    setDrawModal(true)
-                    setCanvasOn(true)
-                    setStart(true)
-                }
-            }
-        })
-
-        socket.on("add point", data=>{
-            if (data.roomID === roomID){
-
-                // dingSound.play()
-                if (data.user[0].id === socket.id){
-                 setJumpButton(true)
-                } else {
-                 setJumpButton(false)
-                }
-                setUsers(data.user)
-            }
-        })
-
-        socket.on("minus point", data=>{
-            if (data.roomID === roomID){
-
-                // dingSound.play()
-                if (data.user[0].id === socket.id){
-                 setJumpButton(true)
-                } else {
-                 setJumpButton(false)
-                }
-                setUsers(data.user)
-            }
-        })
-
-        socket.on("game over", data=>{
-            if (data.roomID === roomID){
-                onGameOver(data.user[0].user)
-            }
-        })
-
-        socket.on("playagain", data=>{
-            if (data.roomID === roomID){
-                setUsers(data.snapshot)
-
-                // setDrawer(data.snapshot[0])
-                drawerRef.current = data.snapshot[0]
-            }
-        })
-
-        socket.on("start", data=>{
-            if (data.roomID === roomID){
-                setStart(true)
-                setCanvasOn(true)
-
-                // setDrawer(data.user)
-                // drawerRef.current = data.user
-                drawerRef.current = userSnapshot.current[0]
-            }
-        })
-        socket.on("updateRef",data=>{
-            setPeers(data)
-        })
-
-        socket.on("mute", data=>{
-            if (data.roomID === roomID){
-                const idx = peersReff.current.findIndex(p => p.peerID === data.id);
-                if(idx > -1){
-                    peersReff.current[idx].mute = true
-                    socket.emit("updateRef", peersReff.current)
-                }
-            }
-        })
-
-        socket.on("unmute", data=>{
-            if (data.roomID === roomID){
-                const idx = peersReff.current.findIndex(p => p.peerID === data.id);
-                if(idx > -1){
-                    peersReff.current[idx].mute = false
-                    socket.emit("updateRef", peersReff.current)
-                }
-            }
-        })
-
-        socket.on("draw", data=>{
-            if (data.roomID === roomID){
-                // setDrawerCounter(drawerCounter=>drawerCounter+1)
-                drawerCounter.current += 1
-                onCountDown()
-                setDrawWord(data.word)
-            }
-        })
-
-        socket.on("skip", roomid=>{
-            if (roomid === roomID){
-                drawerCounter.current += 1
-                // setDrawerCounter(drawerCounter=>drawerCounter+1)
-            }
-        })
-        
-        socket.on("add answer replied", obj => {
-            if (obj.roomID === roomID) {
-                // console.log(roomID)
-                // console.log(obj.answer)
-                setAnswerData(answerData=>[...answerData, obj.answer])
-            }
-        });
-
-        socket.on("welcome", obj => {
-            if (obj.roomID === roomID) {
-                setAnswerData(answerData=>[...answerData,obj.user])
-            }
-        });
-
-        socket.on("not ready", data => {
-            if (data.roomID === roomID) {
-                setDrawModal(false)
-                setCanvasOn(false)
-                setStart(false)
-                setTimeout(() => {
-                    alert('Waiting for all players to play again..')
-                }, 500);
-            }
-        });
-
-        socket.on("all users", (obj) => {
-            if (obj.roomID === roomID) {
-                setUsers(users=>obj.usersInThisRoom) 
-
-                userSnapshot.current = obj.userSnapshot
-                // setUserSnapshot(userSnapshot=>obj.userSnapshot) 
-
-                setIsReady(true)
-            }
-        });
-
-        socket.once("room started", (obj) => {
-            history.replace("/")
-            errorSound.play()
-            alert('The room has started! please come back later or create a new one.')
-        });
-
-        socket.once("room full", (obj) => {
-            history.replace("/")
-            errorSound.play()
-            alert('The room is full (max 6 players), please create a new one.')
-        });
-
-        socket.on("canvas-data", data =>{
-            if (data.room === roomID) {
-                var image = new Image()
-                // const canvas =  canvasRef.current;
-                const context = contextRef.current
-
-                image.onload= function(){
-
-                    var cheight = (window.innerHeight - 50) *0.5
-                    var cwidth = (window.innerWidth - 320) * 0.85 * 0.9
-
-                    context.canvas.width = cwidth*2 ;
-                    context.canvas.height = cheight*2 ;
-
-                    context.scale(2,2)
-                    context.drawImage(image,0,0, cwidth, cheight)
-                    context.lineWidth = lineWidth
-                    context.strokeStyle = color
-                    context.lineCap = "round"
-                }
-                image.src = data.data;  
-            }
-        })
-
-        socket.on("disconnected", (obj) => {
-            if (obj.roomID === roomID) {
-                
-                var udisconnect = obj.userdisconnect[0].user
-                var userDis = {
-                    userid: udisconnect.userid,
-                    username: udisconnect.username,
-                    profile : udisconnect.profile,
-                    status :3 
-                }
-
-                if(peersReff.current.length!== 0){
-                    const idx = peersReff.current.findIndex(p => p.peerID === obj.userdisconnect[0].id);
-
-                    if (peersReff.current[idx].peer) peersReff.current[idx].peer.destroy()            
-                    if (idx > -1) {
-                        peersReff.current.splice(idx, 1);
-                    }
-                    setPeers(peersReff.current)
-                    resizeVideo()
-                }
-                
-                // var userList = obj.usersInThisRoom.filter(e => e.id !== socket.id);
-                // alert(JSON.stringify(userList))
-
-                // const peersList = [];
-                // const peersRefList = [];
-                // userList.forEach(user=>{
-                //     const peer = createPeer(user.id, socket.id, window.localStream);
-                //     peersRefList.push({
-                //         peerID: user.id,
-                //         peer,
-                //     })
-                //     peersList.push({
-                //         peerID: user.id,
-                //         peer: peer,
-                //     });        
-                // })
-
-                // peersRef.current = peersRefList
-                // setPeers(peersList) 
-
-                
-                // var idx = peersRef.current.findIndex((obj)=>obj.peerID === obj.userdisconnect[0].id)
-               
-                // peersRef.current[idx].peer.destroy()
-                userSnapshot.current = obj.snapShots
-
-                // setUserSnapshot(userSnapshot=>obj.snapShots)
-                
-                setUsers(users=>obj.usersInThisRoom)
-                setAnswerData(answerData=>[...answerData,userDis])
-            }
-        });
-    },[])
-
     //when user press logout button
     const logout = ()=>{
         errorSound.play()
         if (window.confirm("Do you wanna leave this room?")) {
-            socket.emit("logout")
+            socketRef.current.emit("logout")
             // userVideo.current = null
             window.localStream.getTracks().forEach((track) => {
                 track.stop();
@@ -548,19 +297,20 @@ function Main (props) {
         // window.onbeforeunload = function () {    
         //   return "Are you sure to leave this room?";
         // };
-        // return () => {
-        //   window.removeEventListener('popstate', onBackButtonEvent);
-        // }
+        return () => {
+          window.removeEventListener('popstate', onBackButtonEvent);
+        }
     
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
+
       const onBackButtonEvent = (e) => {
         e.preventDefault();
         if (!isBackButtonClicked) {
             errorSound.play()
           if (window.confirm("Do you wanna leave this room?")) {
             setBackbuttonPress(true)
-            socket.emit("logout")
+            socketRef.current.emit("logout")
             // userVideo.current = null
             window.localStream.getTracks().forEach((track) => {
                 track.stop();
@@ -670,7 +420,7 @@ function Main (props) {
         contextRef.current.closePath()
 
         var dataImg = canvasRef.current.toDataURL("image/png");
-        socket.emit("canvas-data", {room: roomID, data: dataImg})
+        socketRef.current.emit("canvas-data", {room: roomID, data: dataImg})
 
     }
 
@@ -722,43 +472,43 @@ function Main (props) {
     const [jumpButton, setJumpButton] = useState(true)
     const [isjumpscare, setIsjumpscare] = useState(false)
     const [scare, setScare] = useState(false)
-    var sound = new Howl({
-        src: [sound1]
-    });
+    // var sound = new Howl({
+    //     src: [sound1]
+    // });
 
-    var tickingSound = new Howl({
-        src: [ticking],
-        volume:0.5
-    });
+    // var tickingSound = new Howl({
+    //     src: [ticking],
+    //     volume:0.5
+    // });
 
-    var dingSound = new Howl({
-        src: [ding],
-        volume:0.3
-    });
+    // var dingSound = new Howl({
+    //     src: [ding],
+    //     volume:0.3
+    // });
 
-    var answerSound = new Howl({
-        src: [answerDing],
-        volume:0.5
-    });
+    // var answerSound = new Howl({
+    //     src: [answerDing],
+    //     volume:0.5
+    // });
 
-    var winSound1 = new Howl({
-        src: [winsound],
-        volume:0.5
-    });
+    // var winSound1 = new Howl({
+    //     src: [winsound],
+    //     volume:0.5
+    // });
 
-    var winSound2 = new Howl({
-        src: [shoutwin],
-        volume:0.5
-    });
+    // var winSound2 = new Howl({
+    //     src: [shoutwin],
+    //     volume:0.5
+    // });
 
-    var changeSound = new Howl({
-        src: [change],
-        volume:0.5
-    });
+    // var changeSound = new Howl({
+    //     src: [change],
+    //     volume:0.5
+    // });
 
-    var errorSound = new Howl({
-        src: [errorsound]
-    });
+    // var errorSound = new Howl({
+    //     src: [errorsound]
+    // });
     
     //when jumpscare activated
     const jump = ()=>{
@@ -772,7 +522,7 @@ function Main (props) {
     //when user press jump button
     const onJump = ()=>{
         setJumpButton(false)
-        socket.emit("jumpscare", roomID)
+        socketRef.current.emit("jumpscare", roomID)
         setScare(true)
         setTimeout(() => {
             setScare(false)
@@ -782,6 +532,15 @@ function Main (props) {
 
     // ============= Background Music ==============
     // const audioBg = useRef(null)
+    var sound = new Audio(sound1)
+    var tickingSound = new Audio(ticking)
+    var dingSound = new Audio(ding)
+    var answerSound = new Audio(answerDing)
+    var winSound1 = new Audio(winsound)
+    var winSound2 = new Audio(shoutwin)
+    var changeSound = new Audio(change)
+    var errorSound = new Audio(errorsound)
+    
     const [playing, setPlaying, playingRef] = useState(false);
     const togglePlaying = () => setPlaying((prev) => !prev);
 
@@ -800,6 +559,10 @@ function Main (props) {
     //================= video chat===================
     useEffect(()=>{
     if (location.state){
+        socketRef.current = io.connect('https://api.limedraw.io/');
+        // socketRef.current = io.connect('http://localhost:5000/');
+
+
         var image;
         var imagenobg;
         switch (location.state.character) {
@@ -849,16 +612,16 @@ function Main (props) {
             mute: false
         }
 
-        setMyself({id: socket.id, username: location.state.nickname})
+        setMyself({id: socketRef.current.id, username: location.state.nickname})
         
         //=========== peer js start ==========
-        // const myPeer = new Peer(socket.id,{
+        // const myPeer = new Peer(socketRef.current.id,{
         //     host: '/',
         //     port: '3030'
         // }); 
 
         // myPeer.on('open', id=>{
-        //     socket.emit("join room", {roomID: roomID, user: userJoin, peerID: id});
+        //     socketRef.current.emit("join room", {roomID: roomID, user: userJoin, peerID: id});
         // })
         //============ peer js end =============
         
@@ -907,9 +670,9 @@ function Main (props) {
                 //     setPeers([...users, call])
                 // })
 
-                // socket.on('user-connected', data=>{
+                // socketRef.current.on('user-connected', data=>{
                 //     if (data.roomID === roomID){
-                //         var contactlist = data.user.filter(obj => obj.id !== socket.id);
+                //         var contactlist = data.user.filter(obj => obj.id !== socketRef.current.id);
                 //         var peersList=[]
                 //         contactlist.forEach(user=>{
                 //             const peer = myPeer.call(data.userid, stream)
@@ -932,16 +695,15 @@ function Main (props) {
             window.localStream.getVideoTracks()[0].enabled = false
             
             //when first joining room
-            socket.emit("join room", {roomID: roomID, roomType:location.state.roomType ,user: userJoin});
+            socketRef.current.emit("join room", {roomID: roomID, roomType:location.state.roomType ,user: userJoin});
             
             // ====== receive peers object from socket ================================
-            socket.on("peers", data=>{
+            socketRef.current.on("peers", data=>{
                 if (data.roomID === roomID) {
                     const peersList = [];
-                    const peersRefList = [];
-                    var contactlist = data.user.filter(obj => obj.id !== socket.id);
+                    var contactlist = data.user.filter(obj => obj.id !== socketRef.current.id);
                     contactlist.forEach(user=>{
-                        const peer = createPeer(user.id, socket.id, stream);
+                        const peer = createPeer(user.id, socketRef.current.id, stream);
                         peersList.push({
                             peerID: user.id,
                             username: user.user.username,
@@ -954,11 +716,11 @@ function Main (props) {
                 }         
             })
 
-            socket.on("user joined", payload =>{       
-                const peer = addPeer(payload.signal, payload.callerID, stream);
+            socketRef.current.on("user joined", payload =>{       
+                const peer = addPeer(payload.signal, payload.callerID, stream);   
             })
 
-            socket.on("receiving returned signal", payload => {
+            socketRef.current.on("receiving returned signal", payload => {
                 const item = peersReff.current.find(p => p.peerID === payload.id);
                 if (item){
                     item.peer.signal(payload.signal);
@@ -966,6 +728,264 @@ function Main (props) {
             }); 
 
             // =================================================================
+
+            socketRef.current.on("jumpscare", roomId=>{
+                if (roomId === roomID){
+                    jump()
+                }
+            })
+    
+            socketRef.current.on("all answer", roomId=>{
+                if (roomId === roomID){
+                    onAllAnswer()
+                }
+            })
+    
+            socketRef.current.on("next drawer", data=>{
+                if (data.roomID === roomID && userSnapshot.current.length !== 0){
+                    
+                    var counter = drawerCounter.current
+                    var dividend = userSnapshot.current.length
+                    var index = counter % dividend
+                    // console.log("---------------")
+                    // console.log(counter)
+                    // console.log(data.userSnapshot)
+                    // console.log("index= "+ index)
+    
+                    // setDrawer(drawer=> data.userSnapshot[index])
+                    drawerRef.current = userSnapshot.current[index]        
+    
+                    if (userSnapshot.current[index].id === socketRef.current.id){
+                        if (playingRef.current){
+                            changeSound.play()
+                        }
+                        
+                        
+                        setDrawWord('')
+                        setDrawModal(true)
+                        setCanvasOn(true)
+                        setStart(true)
+                    }
+                }
+            })
+    
+            socketRef.current.on("add point", data=>{
+                if (data.roomID === roomID){
+    
+                    // dingSound.play()
+                    if (data.user[0].id === socketRef.current.id){
+                     setJumpButton(true)
+                    } else {
+                     setJumpButton(false)
+                    }
+                    setUsers(data.user)
+                }
+            })
+    
+            socketRef.current.on("minus point", data=>{
+                if (data.roomID === roomID){
+    
+                    // dingSound.play()
+                    if (data.user[0].id === socketRef.current.id){
+                     setJumpButton(true)
+                    } else {
+                     setJumpButton(false)
+                    }
+                    setUsers(data.user)
+                }
+            })
+    
+            socketRef.current.on("game over", data=>{
+                if (data.roomID === roomID){
+                    onGameOver(data.user[0].user)
+                }
+            })
+    
+            socketRef.current.on("playagain", data=>{
+                if (data.roomID === roomID){
+                    setUsers(data.snapshot)
+    
+                    // setDrawer(data.snapshot[0])
+                    drawerRef.current = data.snapshot[0]
+                }
+            })
+    
+            socketRef.current.on("start", data=>{
+                if (data.roomID === roomID){
+                    setStart(true)
+                    setCanvasOn(true)
+    
+                    // setDrawer(data.user)
+                    // drawerRef.current = data.user
+                    drawerRef.current = userSnapshot.current[0]
+                }
+            })
+            socketRef.current.on("updateRef",data=>{
+                setPeers(data)
+            })
+    
+            socketRef.current.on("mute", data=>{
+                if (data.roomID === roomID){
+                    const idx = peersReff.current.findIndex(p => p.peerID === data.id);
+                    if(idx > -1){
+                        peersReff.current[idx].mute = true
+                        socketRef.current.emit("updateRef", peersReff.current)
+                    }
+                }
+            })
+    
+            socketRef.current.on("unmute", data=>{
+                if (data.roomID === roomID){
+                    const idx = peersReff.current.findIndex(p => p.peerID === data.id);
+                    if(idx > -1){
+                        peersReff.current[idx].mute = false
+                        socketRef.current.emit("updateRef", peersReff.current)
+                    }
+                }
+            })
+    
+            socketRef.current.on("draw", data=>{
+                if (data.roomID === roomID){
+                    // setDrawerCounter(drawerCounter=>drawerCounter+1)
+                    drawerCounter.current += 1
+                    onCountDown()
+                    setDrawWord(data.word)
+                }
+            })
+    
+            socketRef.current.on("skip", roomid=>{
+                if (roomid === roomID){
+                    drawerCounter.current += 1
+                    // setDrawerCounter(drawerCounter=>drawerCounter+1)
+                }
+            })
+            
+            socketRef.current.on("add answer replied", obj => {
+                if (obj.roomID === roomID) {
+                    // console.log(roomID)
+                    // console.log(obj.answer)
+                    setAnswerData(answerData=>[...answerData, obj.answer])
+                }
+            });
+    
+            socketRef.current.on("welcome", obj => {
+                if (obj.roomID === roomID) {
+                    setAnswerData(answerData=>[...answerData,obj.user])
+                }
+            });
+    
+            socketRef.current.on("not ready", data => {
+                if (data.roomID === roomID) {
+                    setDrawModal(false)
+                    setCanvasOn(false)
+                    setStart(false)
+                    setTimeout(() => {
+                        alert('Waiting for all players to play again..')
+                    }, 500);
+                }
+            });
+    
+            socketRef.current.on("all users", (obj) => {
+                if (obj.roomID === roomID) {
+                    setUsers(users=>obj.usersInThisRoom) 
+    
+                    userSnapshot.current = obj.userSnapshot
+                    // setUserSnapshot(userSnapshot=>obj.userSnapshot) 
+    
+                    setIsReady(true)
+                }
+            });
+    
+            socketRef.current.once("room started", (obj) => {
+                history.replace("/")
+                errorSound.play()
+                alert('The room has started! please come back later or create a new one.')
+            });
+    
+            socketRef.current.once("room full", (obj) => {
+                history.replace("/")
+                errorSound.play()
+                alert('The room is full (max 6 players), please create a new one.')
+            });
+    
+            socketRef.current.on("canvas-data", data =>{
+                if (data.room === roomID) {
+                    var image = new Image()
+                    // const canvas =  canvasRef.current;
+                    const context = contextRef.current
+    
+                    image.onload= function(){
+    
+                        var cheight = (window.innerHeight - 50) *0.5
+                        var cwidth = (window.innerWidth - 320) * 0.85 * 0.9
+    
+                        context.canvas.width = cwidth*2 ;
+                        context.canvas.height = cheight*2 ;
+    
+                        context.scale(2,2)
+                        context.drawImage(image,0,0, cwidth, cheight)
+                        context.lineWidth = lineWidth
+                        context.strokeStyle = color
+                        context.lineCap = "round"
+                    }
+                    image.src = data.data;  
+                }
+            })
+    
+            socketRef.current.on("disconnected", (obj) => {
+                if (obj.roomID === roomID && obj.userdisconnect[0].user) {
+                    
+                    var udisconnect = obj.userdisconnect[0].user
+                    var userDis = {
+                        userid: udisconnect.userid,
+                        username: udisconnect.username,
+                        profile : udisconnect.profile,
+                        status :3 
+                    }
+    
+                    if(peersReff.current.length!== 0){
+                        const idx = peersReff.current.findIndex(p => p.peerID === obj.userdisconnect[0].id);
+                        // console.log(peersReff.current)
+                        // if (peersReff.current[idx]) {peersReff.current[idx].peer.destroy()}        
+                        if (idx > -1) {
+                            peersReff.current.splice(idx, 1);
+                        }
+                        setPeers(peersReff.current)
+                        resizeVideo()
+                    }
+                    
+                    // var userList = obj.usersInThisRoom.filter(e => e.id !== socketRef.current.id);
+                    // alert(JSON.stringify(userList))
+    
+                    // const peersList = [];
+                    // const peersRefList = [];
+                    // userList.forEach(user=>{
+                    //     const peer = createPeer(user.id, socketRef.current.id, window.localStream);
+                    //     peersRefList.push({
+                    //         peerID: user.id,
+                    //         peer,
+                    //     })
+                    //     peersList.push({
+                    //         peerID: user.id,
+                    //         peer: peer,
+                    //     });        
+                    // })
+    
+                    // peersRef.current = peersRefList
+                    // setPeers(peersList) 
+    
+                    
+                    // var idx = peersRef.current.findIndex((obj)=>obj.peerID === obj.userdisconnect[0].id)
+                   
+                    // peersRef.current[idx].peer.destroy()
+                    userSnapshot.current = obj.snapShots
+    
+                    // setUserSnapshot(userSnapshot=>obj.snapShots)
+                    
+                    setUsers(users=>obj.usersInThisRoom)
+                    setAnswerData(answerData=>[...answerData,userDis])
+                }
+            });
         })
     } else {
         history.replace(`/enter/${roomID}`);
@@ -976,11 +996,20 @@ function Main (props) {
         const peer = new Peer({
             initiator : true,
             trickle: false,
+            reconnectTimer: 100,
             stream,
         })
 
         peer.on("signal", signal =>{
-            socket.emit("sending signal", {userToSignal, callerID, signal})
+            socketRef.current.emit("sending signal", {userToSignal, callerID, signal})
+        })
+
+        peer.on('error', (err) => {
+            peer.destroy()
+        })
+
+        peer.on('close', () => {
+            peer.destroy()
         })
 
         return peer;
@@ -990,11 +1019,20 @@ function Main (props) {
         const peer = new Peer({
             initiator : false,
             trickle:false,
+            reconnectTimer: 100,
             stream,
         })
 
         peer.on("signal", signal=>{
-            socket.emit("returning signal", {signal, callerID})
+            socketRef.current.emit("returning signal", {signal, callerID})
+        })
+
+        peer.on('error', (err) => {
+            peer.destroy()
+        })
+
+        peer.on('close', () => {
+            peer.destroy()
         })
 
         peer.signal(incomingSignal);
@@ -1009,7 +1047,7 @@ function Main (props) {
     
         if (/\S/.test(answer) ){  
             var ansObj
-            if (answer === drawWord && drawingOngoing && drawerRef.current.id !== socket.id){  
+            if (answer === drawWord && drawingOngoing && drawerRef.current.id !== socketRef.current.id){  
                 //adding point
                 addPoint()
                 setDrawingOngoing(false)
@@ -1032,7 +1070,7 @@ function Main (props) {
             }
              
 
-            socket.emit("add answer", {roomID: roomID, answer: ansObj});
+            socketRef.current.emit("add answer", {roomID: roomID, answer: ansObj});
             setAnswer('')
         }
     }
@@ -1105,8 +1143,8 @@ function Main (props) {
            setCanvasOn(true)
 
 
-           if (drawerRef.current.id == socket.id){
-                socket.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot.current, counter: drawerCounter.current})
+           if (drawerRef.current.id == socketRef.current.id){
+                socketRef.current.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot.current, counter: drawerCounter.current})
            } 
         }, 6000);
     }
@@ -1134,8 +1172,8 @@ function Main (props) {
         drawerCounter.current += 1
 
         setDrawModal(false)
-        socket.emit("skip", roomID)
-        socket.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot.current, counter: temp})
+        socketRef.current.emit("skip", roomID)
+        socketRef.current.emit('next drawer', {roomID: roomID, userSnapshot : userSnapshot.current, counter: temp})
     }
 
     const onDraw = () =>{
@@ -1143,7 +1181,7 @@ function Main (props) {
             setDrawingOngoing(true)
             // setDrawerCounter(drawerCounter=>drawerCounter+1)
             drawerCounter.current += 1
-            socket.emit('draw', {roomID: roomID, word:drawWord})
+            socketRef.current.emit('draw', {roomID: roomID, word:drawWord})
             setDrawModal(false)
             onCountDown()
         } else {
@@ -1155,13 +1193,13 @@ function Main (props) {
 
     const addPoint = ()=>{
         var userArr = users
-        var idx = userArr.findIndex(x => x.id === socket.id);
+        var idx = userArr.findIndex(x => x.id === socketRef.current.id);
         users[idx].user.points = users[idx].user.points + topPoint
         var temp = [...users]
         temp.sort((a, b) => (a.user.points < b.user.points) ? 1 : -1)
         setUsers([...temp])
 
-        if (temp[0].id === socket.id){
+        if (temp[0].id === socketRef.current.id){
             setJumpButton(true)
         }
         else {
@@ -1173,28 +1211,28 @@ function Main (props) {
         }
        
 
-        socket.emit("add point", {roomID: roomID, user: temp , id: socket.id});
+        socketRef.current.emit("add point", {roomID: roomID, user: temp , id: socketRef.current.id});
     }
 
     const minusPoint = ()=>{
         var userArr = users
-        var idx = userArr.findIndex(x => x.id === socket.id);
+        var idx = userArr.findIndex(x => x.id === socketRef.current.id);
         users[idx].user.points = users[idx].user.points - 10
         var temp = [...users]
         temp.sort((a, b) => (a.user.points < b.user.points) ? 1 : -1)
         setUsers([...temp])
 
-        if (temp[0].id === socket.id){
+        if (temp[0].id === socketRef.current.id){
             setJumpButton(true)
         } else {
             setJumpButton(false)
         }
 
-        socket.emit("minus point", {roomID: roomID, user: temp});
+        socketRef.current.emit("minus point", {roomID: roomID, user: temp});
     }
 
     const onStart = ()=>{
-        socket.emit("start", {user : users[0], roomID : roomID})
+        socketRef.current.emit("start", {user : users[0], roomID : roomID})
         setDrawWord('')
         setDrawModal(true)
         // setDrawer(users[0])
@@ -1246,7 +1284,7 @@ function Main (props) {
         drawerCounter.current = 1
         setDrawWord('')
         setDrawModal(false)
-        socket.emit("playagain", {roomID: roomID, id: socket.id})
+        socketRef.current.emit("playagain", {roomID: roomID, id: socketRef.current.id})
     }
 
     const onHandleDrawWord = (val)=>{
@@ -1254,32 +1292,24 @@ function Main (props) {
         setDrawWord(temp.toLowerCase())
     }
 
-    const [toolChildSize, setToolChildSize] = useState(0)
+    const [toolChildSize, setToolChildSize] = useState(20)
     const [firstClick, setFirstClick] = useState(true)
     const [ mute, setMute] = useState(false)
 
     const onPauseSound = ()=>{
         setPlaying(false)
-        sound.volume(0.0)
-        tickingSound.volume(0.0)
-        dingSound.volume(0.0) 
-        answerSound.volume(0.0)
-        winSound1.volume(0.0)
-        winSound2.volume(0.0)
-        changeSound.volume(0.0)
-        errorSound.volume(0.0)
     }
 
     const onUnmute = ()=>{
         setMute(false)
         window.localStream.getAudioTracks()[0].enabled = true
-        socket.emit('unmute',{roomID: roomID, id: socket.id})
+        socketRef.current.emit('unmute',{roomID: roomID, id: socketRef.current.id})
     }
 
     const onMute = ()=>{
         setMute(true)
         window.localStream.getAudioTracks()[0].enabled = false
-        socket.emit('mute',{roomID: roomID, id: socket.id})
+        socketRef.current.emit('mute',{roomID: roomID, id: socketRef.current.id})
     }
 
     const [videoStarted, setVideoStarted] = useState(true)
@@ -1465,14 +1495,14 @@ function Main (props) {
 
                                     <canvas
                                         style={{display: canvasOn? 'flex' : 'none'}}
-                                        onMouseDown = {drawerRef.current.id === socket.id? startDrawing : null}
-                                        onMouseUp = {drawerRef.current.id === socket.id? finishDrawing: null}
-                                        onMouseMove = {drawerRef.current.id === socket.id? draw : null}
+                                        onMouseDown = {socketRef.current && drawerRef.current.id === socketRef.current.id? startDrawing : null}
+                                        onMouseUp = {socketRef.current && drawerRef.current.id === socketRef.current.id? finishDrawing: null}
+                                        onMouseMove = {socketRef.current && drawerRef.current.id === socketRef.current.id? draw : null}
                                         onMouseLeave ={()=>{ if (isDrawing)finishDrawing()}}
-                                        onTouchStart = {drawerRef.current.id === socket.id? startDrawing : null}
-                                        onTouchEnd = {drawerRef.current.id === socket.id? finishDrawing: null}
-                                        onTouchMove = {drawerRef.current.id === socket.id? draw : null}
-                                        onTouchCancel = {()=>{ if (isDrawing)finishDrawing()}}
+                                        // onTouchStart = {drawerRef.current.id === socketRef.current.id? startDrawing : null}
+                                        // onTouchEnd = {drawerRef.current.id === socketRef.current.id? finishDrawing: null}
+                                        // onTouchMove = {drawerRef.current.id === socketRef.current.id? draw : null}
+                                        // onTouchCancel = {()=>{ if (isDrawing)finishDrawing()}}
                                         ref = {canvasRef}
                                     /> 
                                     
@@ -1484,7 +1514,7 @@ function Main (props) {
                                         
                                         <div style={{display:'flex', justifyContent:'center', alignItems:'center', width:'100%', height:'100%'}}>
 
-                                            {!isStart && users[0].id === socket.id ?
+                                            {!isStart && users[0].id === socketRef.current.id ?
                                            
                                            <div style={{display:'flex', justifyContent:'center', alignItems:'center', flexDirection:'column'}}>
                                                 <span style={{fontWeight:'bold', fontSize:20, marginBottom:20}} >Start the party and have fun screaming!</span>
@@ -1563,7 +1593,7 @@ function Main (props) {
                         {/* bottom */}
                         <div style={{ height: peers.length >=3 ?'45%' : '40%', display:'flex', flexWrap:'wrap', justifyContent:'space-evenly'}}>
                             <div style={{ position:'relative',marginLeft:10, marginRight:10, marginBottom: 5, height: videoHeight, width: videoWidth }}> 
-                                <video id="videoElement" style={{backgroundColor:'#444',  border:drawerRef.current.id === socket.id ?'4px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
+                                <video id="videoElement" style={{backgroundColor:'#444',  border:socketRef.current && drawerRef.current.id === socketRef.current.id ?'4px solid #CD0094': '0px',borderRadius:10, justifyContent:'center',  height: videoHeight, width: videoWidth , objectFit: "cover" }} ref={userVideo} autoPlay playsInline/> 
                                 <div style={{ color:'white', position:'absolute',  bottom:'3%', left:'5%', backgroundColor:'rgba(0,0,0,0.4)', paddingTop:2, paddingBottom:2, paddingLeft:5, paddingRight:5, borderRadius:3}}>
                                     {mute && <BsFillMicMuteFill color="#FF4A4A" size={15}/>}
 
@@ -1573,7 +1603,7 @@ function Main (props) {
 
 
                            {peers.map((peer,index)=>{
-                               return <Video key={index} peer={peer} scare={scare} drawer={drawerRef.current.id} height={videoHeight} width={videoWidth}/>
+                               return <Video key={peer.peerID} peer={peer} scare={scare} drawer={drawerRef.current.id} height={videoHeight} width={videoWidth}/>
                            })}                        
                             
 
@@ -1601,7 +1631,7 @@ function Main (props) {
                         {/* content */}
                         <div style={{display:'flex', backgroundColor: Constant.DARKER_GREY, flexDirection:'column', overflowY:'scroll', height: `calc(100% - 50px)`, paddingLeft:10, paddingRight:5, paddingTop:5, paddingBottom:5 }}>
                             {users.map((e, index)=>{
-                                return <RenderPoints item={e} idx={index} key={index}/>
+                                return <RenderPoints item={e} socketid={socketRef.current.id} idx={index} key={index}/>
                             })}
                         </div>
                     </div>
