@@ -1494,7 +1494,7 @@ function Main (props) {
                                 <div className={"canvas"} style={{ borderRadius:15, width:'90%'}}> 
 
                                     <canvas
-                                        style={{display: canvasOn? 'flex' : 'none'}}
+                                        style={{display: canvasOn? 'flex' : 'none', cursor: socketRef.current && drawerRef.current.id === socketRef.current.id ?'crossHair' : 'not-allowed'}}
                                         onMouseDown = {socketRef.current && drawerRef.current.id === socketRef.current.id? startDrawing : null}
                                         onMouseUp = {socketRef.current && drawerRef.current.id === socketRef.current.id? finishDrawing: null}
                                         onMouseMove = {socketRef.current && drawerRef.current.id === socketRef.current.id? draw : null}

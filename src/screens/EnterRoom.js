@@ -176,10 +176,10 @@ const EnterRoom = (props) => {
             <div style={{display:'flex', maxWidth:'50%',flexDirection:'flex-start', flexDirection:'column'}}>
                 <div style={{display:'flex', flexDirection:'row', justifyContent:'space-between'}}>
                     <img style={{objectFit:'contain', width: '25%', height:'auto',}} src={limedrawlogo} alt="Logo" />
-                    <div style={{color:'white', display:'flex', flexDirection:'row', justifyContent:'flex-end', alignItems:'flex-end'}}>
+                    {/* <div style={{color:'white', display:'flex', flexDirection:'row', justifyContent:'flex-end', alignItems:'flex-end'}}>
                         <span style={{fontWeight:'bold'}}> By </span>
                         <img style={{objectFit:'contain', marginLeft:10, width: '18%', height:'auto'}} src={fastlime} alt="Logo" />
-                    </div>
+                    </div> */}
                 </div>
 
                 <div style={{backgroundColor: Constant.LIGHTER_GREY, padding: 20, borderRadius:15, marginTop:16, display:'flex', alignItems:'center', flexDirection:'column'}}>
