@@ -559,7 +559,7 @@ function Main (props) {
     //================= video chat===================
     useEffect(()=>{
     if (location.state){
-        socketRef.current = io.connect('https://api.limedraw.io/');
+        socketRef.current = io.connect('https://limedrawapi.herokuapp.com/');
         // socketRef.current = io.connect('http://localhost:5000/');
 
 
